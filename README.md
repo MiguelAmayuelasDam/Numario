@@ -93,11 +93,24 @@ FinPer/
 
 ## Puesta en marcha (local)
 
-> Se completará en la Fase 1 con Docker Compose. De momento el repositorio
-> contiene la estructura y la documentación de análisis.
+Requisitos: **Docker + Docker Compose**.
 
-Requisitos previstos: Docker + Docker Compose. El objetivo es que un único
-`docker-compose up` levante frontend, backend y base de datos.
+```bash
+cp .env.example .env          # ajusta los valores si lo necesitas
+docker compose up --build     # levanta postgres + backend + frontend
+```
+
+- Frontend: http://localhost:5173
+- API: http://localhost:8000 · documentación: http://localhost:8000/docs
+- Health check: http://localhost:8000/health → `{"status":"ok","db":"ok"}`
+
+El backend aplica las migraciones de Alembic automáticamente al arrancar.
+
+### Desarrollo por servicio
+
+Cada carpeta tiene su propio README con el flujo sin Docker:
+- [`backend/README.md`](backend/README.md) — uv, migraciones, tests
+- [`frontend/README.md`](frontend/README.md) — npm, Vite, tests
 
 ## Documentación
 
@@ -113,7 +126,10 @@ Requisitos previstos: Docker + Docker Compose. El objetivo es que un único
 
 ## Estado del proyecto
 
-Fase 0 — Análisis y diseño ✅ (en curso)
+- Fase 0 — Análisis y diseño ✅
+- Fase 1 — Andamiaje y DevOps ✅ (Docker Compose, FastAPI + `/health`,
+  SQLAlchemy + Alembic, React + Vite + Tailwind + shadcn/ui, CI en GitHub Actions)
+- Fase 2 — Autenticación y seguridad base ⏭️ (siguiente)
 
 Ver hoja de ruta completa en el plan de trabajo del proyecto.
 
