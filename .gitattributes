@@ -1,0 +1,7 @@
+# Normaliza saltos de línea. Los scripts de shell deben usar LF siempre para
+# que funcionen dentro de los contenedores Linux aunque se editen en Windows.
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.jpg binary
+*.svg text

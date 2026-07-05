@@ -1,0 +1,55 @@
+# Orquestación de FinPer para desarrollo local.
+# Levanta los tres servicios: postgres, backend y frontend.
+#   docker compose up --build
+# Las variables se leen de un fichero .env (ver .env.example).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-finper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finper}
+      POSTGRES_DB: ${POSTGRES_DB:-finper}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finper} -d ${POSTGRES_DB:-finper}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-finper}:${POSTGRES_PASSWORD:-finper}@postgres:5432/${POSTGRES_DB:-finper}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    ports:
+      - "8000:8000"
+    # Hot-reload en desarrollo: el código del host se monta en /app. El entorno
+    # virtual vive en /opt/venv (fuera de /app), así el bind mount no lo oculta.
+    volumes:
+      - ./backend:/app
+    command: ["--reload"]
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    ports:
+      - "5173:5173"
+    # Volumen anónimo para preservar los node_modules de la imagen bajo el bind mount.
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:

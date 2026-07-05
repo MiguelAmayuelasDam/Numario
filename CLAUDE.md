@@ -96,21 +96,22 @@ FinPer/
 
 ## 5. Plan de trabajo por fases
 
-El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 0
-completada; siguiente, Fase 1.**
+El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 1
+completada; siguiente, Fase 2.**
 
 ### Fase 0 — Análisis y diseño ✅
 Personas, user stories con MoSCoW, requisitos, modelo ER, contrato de API y ADR
 del stack. Todo en `docs/`.
 
-### Fase 1 — Andamiaje y DevOps desde el día uno (SIGUIENTE)
-Montar la infraestructura antes que las features:
+### Fase 1 — Andamiaje y DevOps desde el día uno ✅
+Infraestructura montada antes que las features:
 - Docker Compose con 3 servicios: `frontend`, `backend`, `postgres`.
-- FastAPI con endpoint `/health` y conexión a PostgreSQL.
-- SQLAlchemy 2.0 + Alembic con la primera migración.
-- React + Vite + TS + Tailwind + shadcn/ui arrancando.
-- GitHub Actions mínimo: lint + tests (aunque estén casi vacíos).
-- **Hito:** `docker-compose up` levanta todo y el CI está en verde.
+- FastAPI con endpoint `/health` (comprueba la conexión a PostgreSQL).
+- SQLAlchemy 2.0 + Alembic con la primera migración (`0001_create_users`).
+- React + Vite + TS + Tailwind v4 + shadcn/ui arrancando.
+- GitHub Actions (`.github/workflows/ci.yml`): lint (ruff/mypy · eslint/tsc) + tests.
+- Dependencias del backend gestionadas con **uv** (`pyproject.toml` + `uv.lock`).
+- **Hito:** `docker compose up` levanta todo y el CI está en verde.
 
 ### Fase 2 — Autenticación y seguridad base (TDD)
 Registro/login con JWT aplicando TDD (test antes que endpoint). Hash de
