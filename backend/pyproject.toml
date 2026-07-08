@@ -1,7 +1,7 @@
 [project]
-name = "finper-backend"
+name = "numario-backend"
 version = "0.1.0"
-description = "FinPer — API de finanzas personales (FastAPI)"
+description = "Numario — API de finanzas personales (FastAPI)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

@@ -5,9 +5,9 @@
 
 ---
 
-## 1. Qué es FinPer
+## 1. Qué es Numario
 
-**FinPer** (Finanzas Personales) es un gestor de finanzas personales web.
+**Numario** (Finanzas Personales) es un gestor de finanzas personales web.
 Es el **proyecto final del Máster de Desarrollo de Software con IA** y debe
 demostrar aprendizaje en seis áreas: análisis de necesidades, diseño y
 arquitectura de software, flujos de desarrollo con IA, calidad de código,
@@ -15,7 +15,7 @@ infraestructura/cloud y seguridad.
 
 ### El problema que resuelve
 A la gente le preocupa gastar de más, pero en cuanto se olvida, gasta sin
-control. FinPer ataca ese olvido con **visibilidad continua** y **alertas
+control. Numario ataca ese olvido con **visibilidad continua** y **alertas
 proactivas** de presupuesto, sin que la app sea tan tediosa que se acabe
 abandonando por pereza o aburrimiento.
 
@@ -77,7 +77,7 @@ Justificación detallada en `docs/decisions/0001-stack-tecnologico.md`.
 ## 4. Estructura del repositorio
 
 ```
-FinPer/
+Numario/
 ├── frontend/            # React + TypeScript (se inicializa en Fase 1)
 ├── backend/             # FastAPI + lógica de negocio (se inicializa en Fase 1)
 ├── docs/

@@ -33,7 +33,7 @@ export default function App() {
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-6 p-8 text-center">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight">FinPer</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Numario</h1>
         <p className="mt-2 text-muted-foreground">Gestor de finanzas personales</p>
       </div>
 

@@ -12,7 +12,7 @@ describe("App", () => {
   it("muestra el título de la aplicación", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }))
     render(<App />)
-    expect(screen.getByRole("heading", { name: "FinPer" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Numario" })).toBeInTheDocument()
   })
 
   it("marca el backend como 'ok' cuando /health responde correctamente", async () => {

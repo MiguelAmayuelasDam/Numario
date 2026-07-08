@@ -1,4 +1,4 @@
-# Frontend — FinPer
+# Frontend — Numario
 
 Aplicación **React 19 + TypeScript** con **Vite**, **Tailwind CSS v4** y
 **shadcn/ui**. Tests con **Vitest** + Testing Library.

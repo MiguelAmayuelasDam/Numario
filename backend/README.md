@@ -1,4 +1,4 @@
-# Backend — FinPer
+# Backend — Numario
 
 API **FastAPI** (Python 3.13) con **SQLAlchemy 2.0**, **Alembic** y
 **PostgreSQL**. Gestión de dependencias con **uv**.

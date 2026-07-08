@@ -139,7 +139,7 @@ wheels = [
 ]
 
 [[package]]
-name = "finper-backend"
+name = "numario-backend"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

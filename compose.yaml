@@ -1,4 +1,4 @@
-# Orquestación de FinPer para desarrollo local.
+# Orquestación de Numario para desarrollo local.
 # Levanta los tres servicios: postgres, backend y frontend.
 #   docker compose up --build
 # Las variables se leen de un fichero .env (ver .env.example).
@@ -7,15 +7,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-finper}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-finper}
-      POSTGRES_DB: ${POSTGRES_DB:-finper}
+      POSTGRES_USER: ${POSTGRES_USER:-numario}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-numario}
+      POSTGRES_DB: ${POSTGRES_DB:-numario}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finper} -d ${POSTGRES_DB:-finper}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-numario} -d ${POSTGRES_DB:-numario}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,7 +26,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-finper}:${POSTGRES_PASSWORD:-finper}@postgres:5432/${POSTGRES_DB:-finper}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-numario}:${POSTGRES_PASSWORD:-numario}@postgres:5432/${POSTGRES_DB:-numario}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
       ENVIRONMENT: ${ENVIRONMENT:-development}

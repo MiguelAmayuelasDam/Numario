@@ -14,7 +14,7 @@ las decisiones de producto y priorización del backlog.
   - Ha probado apps de finanzas y las ha abandonado por tediosas.
   - No sabe cuánto puede gastar "sin pasarse".
   - Meter movimientos a mano le da pereza.
-- **Cómo la ayuda FinPer:**
+- **Cómo la ayuda Numario:**
   - La regla 50-30-20 le da un marco claro sin tener que pensar.
   - La importación por CSV le ahorra el tecleo manual.
   - Las alertas le avisan antes de pasarse, no después.
@@ -30,7 +30,7 @@ las decisiones de producto y priorización del backlog.
   - Se preocupa por gastar de más, pero lo olvida y vuelve a gastar.
   - Los extractos del banco son ilegibles y no clasifican nada.
   - No tiene visión de "cuánto he despilfarrado este mes".
-- **Cómo lo ayuda FinPer:**
+- **Cómo lo ayuda Numario:**
   - El dashboard mensual le da visibilidad inmediata del ahorro/despilfarro.
   - La clasificación inteligente ordena sus movimientos sin esfuerzo.
   - El objetivo de colchón de emergencia le da una meta concreta.
@@ -45,7 +45,7 @@ las decisiones de producto y priorización del backlog.
 - **Frustraciones:**
   - Lleva las cuentas en una hoja de cálculo que mantiene a mano.
   - Quiere métricas, no solo apuntar gastos.
-- **Cómo la ayuda FinPer:**
+- **Cómo la ayuda Numario:**
   - Comparación presupuesto vs. real por cada cubo 50-30-20.
   - Histórico y análisis de tendencia mensual.
 

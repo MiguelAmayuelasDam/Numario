@@ -16,18 +16,18 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: finper
-          POSTGRES_PASSWORD: finper
-          POSTGRES_DB: finper
+          POSTGRES_USER: numario
+          POSTGRES_PASSWORD: numario
+          POSTGRES_DB: numario
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U finper -d finper"
+          --health-cmd "pg_isready -U numario -d numario"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql+psycopg://finper:finper@localhost:5432/finper
+      DATABASE_URL: postgresql+psycopg://numario:numario@localhost:5432/numario
     steps:
       - uses: actions/checkout@v4
       - name: Set up uv

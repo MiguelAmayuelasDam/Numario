@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
 
     # Base de datos
-    database_url: str = "postgresql+psycopg://finper:finper@localhost:5432/finper"
+    database_url: str = "postgresql+psycopg://numario:numario@localhost:5432/numario"
 
     # JWT (se usará a partir de la Fase 2; aquí solo se declara la config)
     jwt_secret_key: str = "cambia-esto-en-produccion"

@@ -1,4 +1,4 @@
-# FinPer — Gestor de Finanzas Personales
+# Numario — Gestor de Finanzas Personales
 
 > Aplicación web que ayuda a las personas a tomarse en serio su dinero sin
 > abandonar por pereza o aburrimiento, aplicando la regla **50-30-20** y el
@@ -25,7 +25,7 @@ Proyecto final del Máster de Desarrollo de Software con IA.
 ## Propuesta de valor
 
 El problema: a la gente le preocupa gastar de más, pero en cuanto se olvida,
-gasta sin control. FinPer ataca ese olvido con **visibilidad continua** y
+gasta sin control. Numario ataca ese olvido con **visibilidad continua** y
 **alertas proactivas** de presupuesto.
 
 Pilares funcionales:
@@ -78,7 +78,7 @@ Ver detalle en [`docs/architecture/`](docs/architecture/).
 ## Estructura del repositorio
 
 ```
-FinPer/
+Numario/
 ├── frontend/            # Aplicación React + TypeScript
 ├── backend/             # API FastAPI + lógica de negocio
 ├── docs/
