@@ -75,6 +75,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Deps del runner y navegadores ANTES de levantar Docker: así node_modules
+      # lo crea el usuario del runner y no colisiona con el contenedor (que corre
+      # como root sobre el bind-mount ./frontend).
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Install Playwright (chromium)
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
       - name: Levantar el stack (compose)
         run: docker compose up -d --build
       - name: Esperar a backend y frontend
@@ -88,18 +103,6 @@ jobs:
             sleep 2
           done
           if [ -z "$ok" ]; then echo "El stack no arrancó a tiempo"; docker compose logs; exit 1; fi
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-      - name: Install Playwright (chromium)
-        working-directory: frontend
-        run: npx playwright install --with-deps chromium
       - name: Run E2E
         working-directory: frontend
         run: npm run test:e2e
