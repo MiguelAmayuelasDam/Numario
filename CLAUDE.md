@@ -96,8 +96,8 @@ Numario/
 
 ## 5. Plan de trabajo por fases
 
-El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 1
-completada; siguiente, Fase 2.**
+El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 2
+completada; siguiente, Fase 3.**
 
 ### Fase 0 — Análisis y diseño ✅
 Personas, user stories con MoSCoW, requisitos, modelo ER, contrato de API y ADR
@@ -113,11 +113,15 @@ Infraestructura montada antes que las features:
 - Dependencias del backend gestionadas con **uv** (`pyproject.toml` + `uv.lock`).
 - **Hito:** `docker compose up` levanta todo y el CI está en verde.
 
-### Fase 2 — Autenticación y seguridad base (TDD)
-Registro/login con JWT aplicando TDD (test antes que endpoint). Hash de
-contraseñas (bcrypt/argon2), validación Pydantic, rate limiting en login,
-variables de entorno. E2E de login con Playwright.
-- **Hito:** registro + login funcionando, cubiertos por tests unitarios y E2E.
+### Fase 2 — Autenticación y seguridad base (TDD) ✅
+Registro/login con JWT aplicando TDD. Hash con **argon2id** (`pwdlib`),
+validación Pydantic, **rate limiting** en login (`slowapi`), secretos por
+entorno. **Nick de perfil obligatorio y único**; login por email **o** nick.
+**Política de contraseña robusta** (complejidad + bloqueo de comunes + no
+contener email/nick) validada en backend y frontend, con medidor de fuerza.
+Refresh tokens **persistidos, rotables y revocables**. E2E de login con
+Playwright.
+- **Hito:** registro + login funcionando, cubiertos por tests unitarios y E2E. ✅
 
 ### Fase 3 — Núcleo de movimientos y categorías
 Modelo `Transaction` con `Decimal` (nunca float), categorías semilla mapeadas a

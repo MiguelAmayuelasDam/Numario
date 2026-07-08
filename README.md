@@ -129,7 +129,16 @@ Cada carpeta tiene su propio README con el flujo sin Docker:
 - Fase 0 — Análisis y diseño ✅
 - Fase 1 — Andamiaje y DevOps ✅ (Docker Compose, FastAPI + `/health`,
   SQLAlchemy + Alembic, React + Vite + Tailwind + shadcn/ui, CI en GitHub Actions)
-- Fase 2 — Autenticación y seguridad base ⏭️ (siguiente)
+- Fase 2 — Autenticación y seguridad base ✅ (registro con nick único y política
+  de contraseña robusta, login por email/nick, JWT + refresh rotables y
+  revocables, argon2id, rate limiting; TDD backend, Vitest y E2E Playwright)
+- Fase 3 — Núcleo de movimientos y categorías ⏭️ (siguiente)
+
+### Autenticación (Fase 2)
+
+- API bajo `/api/v1/auth`: `register`, `login`, `refresh`, `logout`, `me`.
+- Detalle de seguridad en [`docs/security/01-owasp-autenticacion.md`](docs/security/01-owasp-autenticacion.md).
+- E2E: con el stack levantado, `cd frontend && npx playwright install chromium && npm run test:e2e`.
 
 Ver hoja de ruta completa en el plan de trabajo del proyecto.
 

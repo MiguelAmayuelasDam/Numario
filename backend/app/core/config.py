@@ -22,10 +22,15 @@ class Settings(BaseSettings):
     # Base de datos
     database_url: str = "postgresql+psycopg://numario:numario@localhost:5432/numario"
 
-    # JWT (se usará a partir de la Fase 2; aquí solo se declara la config)
-    jwt_secret_key: str = "cambia-esto-en-produccion"
+    # JWT. El secreto real llega por entorno; este default (solo dev) debe tener
+    # ≥32 bytes para HS256 (RFC 7518 §3.2).
+    jwt_secret_key: str = "dev-only-secret-cambiar-en-produccion-000000"
+    jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 15
     jwt_refresh_token_expire_days: int = 7
+
+    # Rate limiting (formato de slowapi: "<n>/<periodo>")
+    rate_limit_login: str = "5/minute"
 
     @property
     def cors_origins_list(self) -> list[str]:

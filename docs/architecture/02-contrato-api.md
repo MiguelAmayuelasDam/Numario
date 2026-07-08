@@ -14,24 +14,45 @@ Todos los endpoints salvo autenticación requieren cabecera
 | ------ | ------------------- | ----------------------------------- | ---- |
 | POST   | `/auth/register`    | Registrar usuario                   | No   |
 | POST   | `/auth/login`       | Login, devuelve access + refresh    | No   |
-| POST   | `/auth/refresh`     | Renovar access token                | No*  |
+| POST   | `/auth/refresh`     | Renovar access token (rotación)     | No*  |
 | POST   | `/auth/logout`      | Invalidar refresh token             | Sí   |
+| GET    | `/auth/me`          | Datos del usuario autenticado       | Sí   |
 
 \* requiere refresh token válido.
 
 **POST /auth/register**
 ```json
 // request
-{ "email": "user@mail.com", "password": "••••••••" }
+{ "email": "user@mail.com", "nickname": "miusuario", "password": "••••••••" }
 // response 201
-{ "id": "uuid", "email": "user@mail.com" }
+{ "id": "uuid", "email": "user@mail.com", "nickname": "miusuario" }
 ```
+
+Reglas:
+- `nickname`: obligatorio y **único** (3–30, `[a-zA-Z0-9_.-]`). Se normaliza a
+  minúsculas, igual que el email.
+- `password`: ≥ 8 con mayúscula, minúscula, número y símbolo; no puede ser una
+  contraseña común ni contener el email o el nick. Fallo → `422` con la lista de
+  requisitos incumplidos.
+- Email o nick duplicado → `409`.
 
 **POST /auth/login**
 ```json
+// request — el identificador puede ser el email o el nick
+{ "identifier": "user@mail.com", "password": "••••••••" }
 // response 200
-{ "access_token": "jwt", "refresh_token": "jwt", "token_type": "bearer" }
+{ "access_token": "jwt", "refresh_token": "opaco", "token_type": "bearer" }
 ```
+
+**POST /auth/refresh** · **POST /auth/logout**
+```json
+// request (ambos)
+{ "refresh_token": "opaco" }
+```
+El refresh **rota**: cada renovación revoca el token usado y emite uno nuevo
+(reutilizar uno ya rotado → `401`). El logout revoca el refresh indicado.
+
+**GET /auth/me** → `200 { "id", "email", "nickname" }` (requiere Bearer).
 
 ---
 

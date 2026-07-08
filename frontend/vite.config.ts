@@ -27,5 +27,7 @@ export default defineConfig({
     globals: false,
     setupFiles: "./src/setupTests.ts",
     css: true,
+    // Los tests E2E de Playwright viven en e2e/ y se corren con `npm run test:e2e`.
+    exclude: ["**/node_modules/**", "**/dist/**", "e2e/**"],
   },
 })
