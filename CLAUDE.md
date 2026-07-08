@@ -206,14 +206,25 @@ Estas reglas deben respetarse siempre al escribir código:
 - **Tests**: no dejarlos para el final; acompañan a cada feature.
 - **Alcance**: toda funcionalidad debe ayudar a demostrar alguna de las seis
   áreas del temario; lo que no, va al final del backlog.
+- **📌 TAREA PERMANENTE — Documentos vivos.** Al cerrar cada fase (o al añadir
+  una funcionalidad relevante) **actualizar siempre**:
+  1. `docs/glosario-funcionalidades.md` — añadir qué se implementó y **por qué**
+     (bloque de la fase + vista transversal por áreas).
+  2. `docs/comandos.md` — si la fase introduce comandos nuevos (tests, scripts,
+     migraciones, servicios), reflejarlos en el runbook.
+  No cerrar una fase sin haber actualizado ambos documentos.
 
 ---
 
 ## 9. Documentación de referencia
 
+- `docs/glosario-funcionalidades.md` — **documento vivo**: qué se ha hecho en
+  cada fase y por qué (ver tarea permanente en §8)
+- `docs/comandos.md` — **runbook**: comandos para Docker, tests, migraciones, E2E
 - `docs/analysis/01-personas.md` — personas de usuario
 - `docs/analysis/02-user-stories.md` — user stories + priorización MoSCoW
 - `docs/analysis/03-requisitos.md` — requisitos funcionales y no funcionales
 - `docs/architecture/01-modelo-datos.md` — modelo entidad-relación
 - `docs/architecture/02-contrato-api.md` — contrato de la API REST
 - `docs/decisions/0001-stack-tecnologico.md` — ADR del stack
+- `docs/security/01-owasp-autenticacion.md` — controles de seguridad de auth

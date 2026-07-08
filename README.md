@@ -114,6 +114,8 @@ Cada carpeta tiene su propio README con el flujo sin Docker:
 
 ## Documentación
 
+- **Glosario de funcionalidades (documento vivo)** — [`docs/glosario-funcionalidades.md`](docs/glosario-funcionalidades.md)
+- **Comandos / runbook** — [`docs/comandos.md`](docs/comandos.md)
 - **Análisis** — [`docs/analysis/`](docs/analysis/)
   - [Personas de usuario](docs/analysis/01-personas.md)
   - [User stories y backlog (MoSCoW)](docs/analysis/02-user-stories.md)
