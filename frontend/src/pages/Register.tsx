@@ -40,7 +40,11 @@ export default function Register() {
       await register(email, nickname, password)
       navigate("/", { replace: true })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "No se pudo completar el registro")
+      if (err instanceof ApiError) {
+        setError(err.status === 422 ? "Revisa los datos introducidos." : err.message)
+      } else {
+        setError("No se pudo completar el registro")
+      }
     } finally {
       setSubmitting(false)
     }

@@ -70,6 +70,20 @@ describe("Login", () => {
     })
   })
 
+  it("valida en cliente y no llama a la API con campos vacíos", async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal("fetch", fetchMock)
+    const user = userEvent.setup()
+    renderLogin()
+
+    await user.click(screen.getByRole("button", { name: "Entrar" }))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Introduce tu email o nick y tu contraseña.",
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it("muestra un error si las credenciales son inválidas", async () => {
     vi.stubGlobal(
       "fetch",

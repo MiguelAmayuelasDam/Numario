@@ -25,12 +25,27 @@ export default function Login() {
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
+
+    // Validación en cliente: evita mandar campos vacíos y mostrar el mensaje
+    // de validación del backend (en inglés).
+    if (identifier.trim() === "" || password === "") {
+      setError("Introduce tu email o nick y tu contraseña.")
+      return
+    }
+
     setSubmitting(true)
     try {
       await login(identifier, password)
       navigate("/", { replace: true })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "No se pudo iniciar sesión")
+      if (err instanceof ApiError) {
+        // Un 422 (validación) se traduce a un mensaje claro en español.
+        setError(
+          err.status === 422 ? "Revisa los datos introducidos." : err.message,
+        )
+      } else {
+        setError("No se pudo iniciar sesión")
+      }
     } finally {
       setSubmitting(false)
     }
