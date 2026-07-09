@@ -90,3 +90,37 @@ def tokens(client: TestClient, registered_user: dict[str, str]) -> dict[str, str
 @pytest.fixture
 def auth_headers(tokens: dict[str, str]) -> dict[str, str]:
     return {"Authorization": f"Bearer {tokens['access_token']}"}
+
+
+@pytest.fixture
+def seed_categories(db_session: Session) -> None:
+    """Siembra las categorías globales por defecto (como hace la migración 0004).
+
+    Los tests usan `create_all`, no las migraciones, así que hay que insertarlas
+    aquí reutilizando la misma fuente de verdad.
+    """
+    from app.db.default_categories import DEFAULT_CATEGORIES
+    from app.models.category import Category
+
+    db_session.add_all(
+        Category(user_id=None, name=name, bucket=bucket, is_default=True)
+        for name, bucket in DEFAULT_CATEGORIES
+    )
+    db_session.commit()
+
+
+@pytest.fixture
+def sample_transaction(client: TestClient, auth_headers: dict[str, str]) -> dict[str, object]:
+    """Crea un movimiento y devuelve su representación JSON."""
+    response = client.post(
+        "/api/v1/transactions",
+        headers=auth_headers,
+        json={
+            "amount": "42.90",
+            "type": "expense",
+            "concept": "Mercadona",
+            "occurred_on": "2026-07-03",
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()

@@ -67,15 +67,34 @@ El refresh **rota**: cada renovación revoca el token usado y emite uno nuevo
 | DELETE | `/transactions/{id}`     | Eliminar                             |
 
 Query params de listado: `from`, `to`, `category_id`, `type`, `page`, `size`.
+El listado va **ordenado de más reciente a más antiguo** (`occurred_on` desc).
 
-**POST /transactions**
+**POST /transactions** (request)
 ```json
 {
   "amount": "42.90",
   "type": "expense",
   "concept": "Mercadona",
   "occurred_on": "2026-07-03",
-  "category_id": "uuid"   // opcional; si falta, se intenta clasificar
+  "category_id": "uuid"   // opcional; puede quedar sin categoría
+}
+```
+Reglas: `amount` > 0 como **string decimal** (2 decimales; se cuantiza en el
+servidor). `type` ∈ {`income`, `expense`}. `category_id` debe ser global o del
+usuario (si no, `422`).
+
+**Respuesta 201 / 200** (incluye la categoría anidada y el origen)
+```json
+{
+  "id": "uuid",
+  "amount": "42.90",
+  "type": "expense",
+  "concept": "Mercadona",
+  "occurred_on": "2026-07-03",
+  "category_id": "uuid",
+  "category": { "id": "uuid", "name": "Alimentación", "bucket": "living", "is_default": true },
+  "source": "manual",
+  "created_at": "2026-07-03T10:00:00Z"
 }
 ```
 

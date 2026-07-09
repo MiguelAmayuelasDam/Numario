@@ -19,6 +19,43 @@ export interface TokenPair {
   token_type: string
 }
 
+export type Bucket = "living" | "monthly" | "investment" | "income"
+export type TransactionType = "income" | "expense"
+
+export interface Category {
+  id: string
+  name: string
+  bucket: Bucket
+  is_default: boolean
+}
+
+export interface Transaction {
+  id: string
+  amount: string
+  type: TransactionType
+  concept: string
+  occurred_on: string
+  category_id: string | null
+  category: Category | null
+  source: string
+  created_at: string
+}
+
+export interface TransactionInput {
+  amount: string
+  type: TransactionType
+  concept: string
+  occurred_on: string
+  category_id?: string | null
+}
+
+export interface TransactionFilters {
+  from?: string
+  to?: string
+  category_id?: string
+  type?: TransactionType
+}
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -120,4 +157,28 @@ export const api = {
 
   logout: (refresh_token: string): Promise<void> =>
     request<void>("/auth/logout", { method: "POST", body: { refresh_token }, auth: true }),
+
+  categories: {
+    list: (): Promise<Category[]> => request<Category[]>("/categories", { auth: true }),
+    create: (name: string, bucket: Bucket): Promise<Category> =>
+      request<Category>("/categories", { method: "POST", body: { name, bucket }, auth: true }),
+  },
+
+  transactions: {
+    list: (filters: TransactionFilters = {}): Promise<Transaction[]> => {
+      const params = new URLSearchParams()
+      if (filters.from) params.set("from", filters.from)
+      if (filters.to) params.set("to", filters.to)
+      if (filters.category_id) params.set("category_id", filters.category_id)
+      if (filters.type) params.set("type", filters.type)
+      const qs = params.toString()
+      return request<Transaction[]>(`/transactions${qs ? `?${qs}` : ""}`, { auth: true })
+    },
+    create: (input: TransactionInput): Promise<Transaction> =>
+      request<Transaction>("/transactions", { method: "POST", body: input, auth: true }),
+    update: (id: string, input: Partial<TransactionInput>): Promise<Transaction> =>
+      request<Transaction>(`/transactions/${id}`, { method: "PATCH", body: input, auth: true }),
+    remove: (id: string): Promise<void> =>
+      request<void>(`/transactions/${id}`, { method: "DELETE", auth: true }),
+  },
 }
