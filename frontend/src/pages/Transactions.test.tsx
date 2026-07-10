@@ -134,14 +134,15 @@ describe("Transactions", () => {
     expect(Number(body.amount)).toBe(15.5)
   })
 
-  it("borra un movimiento desde el diálogo de edición", async () => {
+  it("despliega la fila y borra el movimiento", async () => {
     installFetch([tx({ id: "t1", concept: "Gimnasio" })])
     vi.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
     renderPage()
 
+    // Clic en la fila la despliega (acordeón) con las acciones.
     await user.click(await screen.findByText("Gimnasio"))
-    await user.click(await screen.findByRole("button", { name: "Borrar movimiento" }))
+    await user.click(await screen.findByRole("button", { name: "Borrar" }))
 
     await waitFor(() => expect(screen.queryByText("Gimnasio")).not.toBeInTheDocument())
   })

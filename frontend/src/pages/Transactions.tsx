@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { Search } from "lucide-react"
+import { ChevronDown, Search } from "lucide-react"
 
+import { SplitTransaction } from "@/components/SplitTransaction"
 import { TransactionForm } from "@/components/TransactionForm"
 import { Button } from "@/components/ui/button"
+import { DateInput } from "@/components/ui/date-input"
 import {
   Dialog,
   DialogContent,
@@ -12,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -29,9 +30,16 @@ import {
   type TransactionFilters,
   type TransactionInput,
 } from "@/lib/api"
-import { formatDateHeader, formatSignedAmount, groupByDate } from "@/lib/format"
+import {
+  BUCKET_META,
+  formatDateHeader,
+  formatSignedAmount,
+  groupByDate,
+  todayISO,
+} from "@/lib/format"
 
 type Tab = "all" | "expense" | "income" | "transfer"
+type PanelMode = "view" | "edit" | "split"
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "all", label: "Todos" },
@@ -50,6 +58,7 @@ function amountClass(type: Transaction["type"]): string {
 
 export default function Transactions() {
   const { logout } = useAuth()
+  const today = todayISO()
   const [categories, setCategories] = useState<Category[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,11 +71,16 @@ export default function Transactions() {
   const [tab, setTab] = useState<Tab>("all")
   const [search, setSearch] = useState("")
 
-  // Diálogo de alta/edición.
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editing, setEditing] = useState<Transaction | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
+  // Fila desplegada (acordeón) y su modo.
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [panelMode, setPanelMode] = useState<PanelMode>("view")
+  const [rowSubmitting, setRowSubmitting] = useState(false)
+  const [rowError, setRowError] = useState<string | null>(null)
+
+  // Diálogo de alta (solo para crear).
+  const [createOpen, setCreateOpen] = useState(false)
+  const [createSubmitting, setCreateSubmitting] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
 
   useEffect(() => {
     api.categories.list().then(setCategories).catch(() => setCategories([]))
@@ -95,43 +109,61 @@ export default function Transactions() {
     return groupByDate(visible)
   }, [transactions, tab, search])
 
-  const openCreate = () => {
-    setEditing(null)
-    setFormError(null)
-    setDialogOpen(true)
+  const collapse = () => {
+    setExpandedId(null)
+    setPanelMode("view")
+    setRowError(null)
   }
 
-  const openEdit = (t: Transaction) => {
-    setEditing(t)
-    setFormError(null)
-    setDialogOpen(true)
-  }
-
-  const handleSubmit = async (input: TransactionInput) => {
-    setSubmitting(true)
-    setFormError(null)
-    try {
-      if (editing) {
-        await api.transactions.update(editing.id, input)
-      } else {
-        await api.transactions.create(input)
-      }
-      setDialogOpen(false)
-      await loadTransactions()
-    } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : "No se pudo guardar el movimiento")
-    } finally {
-      setSubmitting(false)
+  const toggleRow = (t: Transaction) => {
+    setRowError(null)
+    if (expandedId === t.id) {
+      collapse()
+    } else {
+      setExpandedId(t.id)
+      setPanelMode("view")
     }
   }
 
-  const handleDelete = async () => {
-    if (!editing) return
-    if (!window.confirm(`¿Borrar el movimiento "${editing.concept}"?`)) return
-    await api.transactions.remove(editing.id)
-    setDialogOpen(false)
+  const reloadAndCollapse = async () => {
     await loadTransactions()
+    collapse()
   }
+
+  const handleUpdate = async (t: Transaction, input: TransactionInput) => {
+    setRowSubmitting(true)
+    setRowError(null)
+    try {
+      await api.transactions.update(t.id, input)
+      await reloadAndCollapse()
+    } catch (err) {
+      setRowError(err instanceof ApiError ? err.message : "No se pudo guardar")
+    } finally {
+      setRowSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (t: Transaction) => {
+    if (!window.confirm(`¿Borrar el movimiento "${t.concept}"?`)) return
+    await api.transactions.remove(t.id)
+    await reloadAndCollapse()
+  }
+
+  const handleCreate = async (input: TransactionInput) => {
+    setCreateSubmitting(true)
+    setCreateError(null)
+    try {
+      await api.transactions.create(input)
+      setCreateOpen(false)
+      await loadTransactions()
+    } catch (err) {
+      setCreateError(err instanceof ApiError ? err.message : "No se pudo crear el movimiento")
+    } finally {
+      setCreateSubmitting(false)
+    }
+  }
+
+  const hasDateFilter = dateFrom !== "" || dateTo !== ""
 
   return (
     <main className="mx-auto max-w-4xl p-4 sm:p-8">
@@ -148,38 +180,46 @@ export default function Transactions() {
       </header>
 
       {/* Filtros: fechas, categoría y buscador */}
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <div className="flex items-end gap-2">
-          <div className="space-y-1">
-            <Label htmlFor="from" className="text-xs text-muted-foreground">
-              Fechas
-            </Label>
-            <Input
-              id="from"
-              type="date"
+      <div className="mb-4 flex flex-wrap items-start gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Fechas</span>
+            <DateInput
+              placeholder="Inicio"
               aria-label="Fecha de inicio"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-40"
+              onChange={setDateFrom}
+              max={dateTo || today}
+              className="w-36"
+            />
+            <span className="text-muted-foreground">a</span>
+            <DateInput
+              placeholder="Fin"
+              aria-label="Fecha de fin"
+              value={dateTo}
+              onChange={setDateTo}
+              min={dateFrom || undefined}
+              max={today}
+              className="w-36"
             />
           </div>
-          <span className="pb-2 text-muted-foreground">a</span>
-          <Input
-            id="to"
-            type="date"
-            aria-label="Fecha de fin"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="w-40"
-          />
+          {hasDateFilter ? (
+            <button
+              type="button"
+              onClick={() => {
+                setDateFrom("")
+                setDateTo("")
+              }}
+              className="mt-1 text-xs text-primary hover:underline"
+            >
+              Borrar fechas
+            </button>
+          ) : null}
         </div>
 
-        <div className="min-w-52 flex-1 space-y-1">
-          <Label htmlFor="category-filter" className="text-xs text-muted-foreground">
-            Categoría
-          </Label>
+        <div className="min-w-48 flex-1">
           <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger id="category-filter" aria-label="Filtrar por categoría">
+            <SelectTrigger aria-label="Filtrar por categoría">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -194,7 +234,7 @@ export default function Transactions() {
           </Select>
         </div>
 
-        <div className="relative min-w-52 flex-1">
+        <div className="relative min-w-48 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
@@ -226,7 +266,7 @@ export default function Transactions() {
             </button>
           ))}
         </div>
-        <Button size="sm" onClick={openCreate}>
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
           Añadir movimiento
         </Button>
       </div>
@@ -247,19 +287,30 @@ export default function Transactions() {
               </h2>
               <ul>
                 {group.items.map((t) => (
-                  <li key={t.id}>
+                  <li key={t.id} className="border-b">
                     <button
                       type="button"
-                      onClick={() => openEdit(t)}
+                      onClick={() => toggleRow(t)}
                       data-testid="transaction-row"
-                      className="flex w-full items-center gap-3 border-b px-3 py-3 text-left transition-colors hover:bg-muted/40"
+                      aria-expanded={expandedId === t.id}
+                      className="flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/40"
                     >
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-lg">
                         {t.category?.emoji ?? "🏷️"}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-semibold text-foreground">
-                          {t.concept}
+                        <span className="flex items-center gap-1.5">
+                          {t.category ? (
+                            <span
+                              className={
+                                "size-2 shrink-0 rounded-full " + BUCKET_META[t.category.bucket].dot
+                              }
+                              title={BUCKET_META[t.category.bucket].label}
+                            />
+                          ) : null}
+                          <span className="truncate font-semibold text-foreground">
+                            {t.concept}
+                          </span>
                         </span>
                         <span className="block truncate text-sm text-muted-foreground">
                           {t.category?.name ?? "Sin categoría"}
@@ -268,7 +319,83 @@ export default function Transactions() {
                       <span className={"shrink-0 font-semibold " + amountClass(t.type)}>
                         {formatSignedAmount(t)}
                       </span>
+                      <ChevronDown
+                        className={
+                          "size-4 shrink-0 text-muted-foreground transition-transform " +
+                          (expandedId === t.id ? "rotate-180" : "")
+                        }
+                      />
                     </button>
+
+                    {expandedId === t.id ? (
+                      <div className="bg-muted/20 px-3 pb-4 pt-1">
+                        {panelMode === "view" ? (
+                          <div className="space-y-3">
+                            <p className={"text-2xl font-bold " + amountClass(t.type)}>
+                              {formatSignedAmount(t)}
+                            </p>
+                            <div className="text-sm text-muted-foreground">
+                              <p>{formatDateHeader(t.occurred_on)}</p>
+                              <p>
+                                {t.category
+                                  ? `${t.category.emoji ?? ""} ${t.category.name} · ${BUCKET_META[t.category.bucket].label}`
+                                  : "Sin categoría"}
+                              </p>
+                            </div>
+                            {rowError ? (
+                              <p className="text-sm text-destructive" role="alert">
+                                {rowError}
+                              </p>
+                            ) : null}
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setPanelMode("edit")}>
+                                Editar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPanelMode("split")}
+                              >
+                                Dividir
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => void handleDelete(t)}
+                              >
+                                Borrar
+                              </Button>
+                            </div>
+                          </div>
+                        ) : panelMode === "edit" ? (
+                          <div className="space-y-2">
+                            <TransactionForm
+                              categories={categories}
+                              initial={t}
+                              submitting={rowSubmitting}
+                              error={rowError}
+                              onSubmit={(input) => void handleUpdate(t, input)}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => setPanelMode("view")}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        ) : (
+                          <SplitTransaction
+                            transaction={t}
+                            categories={categories}
+                            onDone={() => void reloadAndCollapse()}
+                            onCancel={() => setPanelMode("view")}
+                          />
+                        )}
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -277,29 +404,19 @@ export default function Transactions() {
         </div>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Diálogo de alta */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? "Editar movimiento" : "Nuevo movimiento"}</DialogTitle>
+            <DialogTitle>Nuevo movimiento</DialogTitle>
             <DialogDescription>Registra una entrada o salida de dinero.</DialogDescription>
           </DialogHeader>
           <TransactionForm
-            key={editing?.id ?? "new"}
             categories={categories}
-            initial={editing ?? undefined}
-            submitting={submitting}
-            error={formError}
-            onSubmit={handleSubmit}
+            submitting={createSubmitting}
+            error={createError}
+            onSubmit={handleCreate}
           />
-          {editing ? (
-            <Button
-              variant="ghost"
-              className="w-full text-destructive hover:text-destructive"
-              onClick={() => void handleDelete()}
-            >
-              Borrar movimiento
-            </Button>
-          ) : null}
         </DialogContent>
       </Dialog>
     </main>

@@ -1,6 +1,8 @@
 // Cliente HTTP de la API. Centraliza la base URL, la inyección del token Bearer
 // y el refresco automático (un intento) cuando el access token caduca (401).
 
+import { parseValidationErrors, type FieldErrors } from "@/lib/validation"
+
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
 const BASE = `${API_URL}/api/v1`
 
@@ -58,11 +60,18 @@ export interface TransactionFilters {
   type?: TransactionType
 }
 
+export interface SplitPart {
+  amount: string
+  category_id: string | null
+}
+
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  fieldErrors: FieldErrors
+  constructor(status: number, message: string, fieldErrors: FieldErrors = {}) {
     super(message)
     this.status = status
+    this.fieldErrors = fieldErrors
     this.name = "ApiError"
   }
 }
@@ -80,14 +89,20 @@ export const tokenStore = {
   },
 }
 
-async function parseError(response: Response): Promise<string> {
+async function buildApiError(response: Response): Promise<ApiError> {
   try {
     const data = await response.json()
-    if (typeof data.detail === "string") return data.detail
-    if (Array.isArray(data.detail) && data.detail[0]?.msg) return data.detail[0].msg
-    return response.statusText
+    if (typeof data.detail === "string") {
+      return new ApiError(response.status, data.detail)
+    }
+    if (Array.isArray(data.detail)) {
+      const fieldErrors = parseValidationErrors(data.detail)
+      const first = Object.values(fieldErrors)[0] ?? "Revisa los datos introducidos."
+      return new ApiError(response.status, first, fieldErrors)
+    }
+    return new ApiError(response.status, response.statusText)
   } catch {
-    return response.statusText
+    return new ApiError(response.status, response.statusText)
   }
 }
 
@@ -122,7 +137,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, await parseError(response))
+    throw await buildApiError(response)
   }
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
@@ -182,5 +197,11 @@ export const api = {
       request<Transaction>(`/transactions/${id}`, { method: "PATCH", body: input, auth: true }),
     remove: (id: string): Promise<void> =>
       request<void>(`/transactions/${id}`, { method: "DELETE", auth: true }),
+    split: (id: string, parts: SplitPart[]): Promise<Transaction[]> =>
+      request<Transaction[]>(`/transactions/${id}/split`, {
+        method: "POST",
+        body: { parts },
+        auth: true,
+      }),
   },
 }

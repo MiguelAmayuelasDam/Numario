@@ -1,4 +1,18 @@
-import type { Transaction } from "@/lib/api"
+import type { Bucket, Transaction } from "@/lib/api"
+
+// Color y etiqueta por cubo 50-30-20 (para el punto de color de cada categoría).
+export const BUCKET_META: Record<Bucket, { label: string; dot: string }> = {
+  living: { label: "Vida (50%)", dot: "bg-green-500" },
+  monthly: { label: "Mes (30%)", dot: "bg-amber-500" },
+  investment: { label: "Inversión (20%)", dot: "bg-blue-500" },
+  income: { label: "Ingresos", dot: "bg-violet-500" },
+  transfer: { label: "No computable", dot: "bg-gray-400" },
+}
+
+// Fecha de hoy en formato ISO (YYYY-MM-DD), para limitar los selectores de fecha.
+export function todayISO(): string {
+  return new Date().toISOString().slice(0, 10)
+}
 
 const moneyFmt = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,

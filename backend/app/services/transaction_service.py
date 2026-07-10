@@ -17,6 +17,15 @@ class TransactionNotFoundError(Exception):
     """El movimiento no existe o no pertenece al usuario."""
 
 
+class SplitAmountMismatchError(Exception):
+    """La suma de las partes no coincide con el importe original."""
+
+    def __init__(self, expected: Decimal, got: Decimal) -> None:
+        self.expected = expected
+        self.got = got
+        super().__init__(f"Las partes suman {got}, se esperaba {expected}")
+
+
 def list_transactions(
     db: Session,
     user: User,
@@ -96,3 +105,45 @@ def delete_transaction(db: Session, user: User, transaction_id: uuid.UUID) -> No
     transaction = get_transaction(db, user, transaction_id)
     db.delete(transaction)
     db.commit()
+
+
+def split_transaction(
+    db: Session,
+    user: User,
+    transaction_id: uuid.UUID,
+    parts: list[tuple[Decimal, uuid.UUID | None]],
+) -> list[Transaction]:
+    """Reemplaza un movimiento por varias partes (por categoría).
+
+    Cada parte hereda el tipo, concepto y fecha del original. La suma de las
+    partes debe coincidir **exactamente** con el importe original; si no,
+    `SplitAmountMismatchError`. Categorías inválidas → `CategoryNotFoundError`.
+    """
+    original = get_transaction(db, user, transaction_id)
+
+    total = sum((amount for amount, _ in parts), Decimal("0"))
+    if total != original.amount:
+        raise SplitAmountMismatchError(expected=original.amount, got=total)
+
+    for _, category_id in parts:
+        resolve_category_for_user(db, user, category_id)
+
+    created: list[Transaction] = []
+    for amount, category_id in parts:
+        child = Transaction(
+            user_id=user.id,
+            category_id=category_id,
+            amount=amount,
+            type=original.type,
+            concept=original.concept,
+            occurred_on=original.occurred_on,
+            source=original.source,
+        )
+        db.add(child)
+        created.append(child)
+
+    db.delete(original)
+    db.commit()
+    for child in created:
+        db.refresh(child)
+    return created

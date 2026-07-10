@@ -179,8 +179,11 @@ Funcionalidad
   reciente a más antiguo** y **agrupado por fecha**, edición y borrado.
 - Tres tipos de movimiento: **Gasto**, **Ingreso** y **No computable**
   (`transfer`: traspaso entre cuentas, ni gasto ni ingreso).
-- **Filtros** por fecha (inicio→fin) y categoría (servidor) + **buscador por
-  concepto** y **pestañas** por tipo (cliente).
+- **Dividir un movimiento** en varias partes por categoría (p. ej. un Bizum de
+  7 € = 5 € comida + 2 € gasolina). Endpoint `POST /transactions/{id}/split`;
+  las partes deben sumar **exactamente** el importe original (si no, `422`).
+- **Filtros** por fecha (inicio→fin, sin fechas futuras) y categoría (servidor) +
+  **buscador por concepto** y **pestañas** por tipo (cliente).
 - Asignación de categoría a cada movimiento (opcional).
 
 Datos / reglas
@@ -201,22 +204,26 @@ Seguridad / API
 - Validación estricta (importe > 0, `type` ∈ {income, expense}, `bucket` válido).
 
 Diseño / UX (frontend)
-- Pantalla **`/movimientos`** (protegida) estilo Fintonic: filtros de fecha y
-  categoría (con emoji), buscador, pestañas Todos/Gastos/Ingresos/No computable,
-  y **listado agrupado por fecha** con filas emoji + concepto (remarcado) +
-  categoría (atenuada) + importe (formateado en es-ES, con signo según el tipo).
-- Alta con botón **"Añadir movimiento"** (diálogo shadcn); **clic en una fila**
-  abre el diálogo de edición (con borrado dentro).
-- Componentes shadcn: **dialog**, **select**, **table**; validación en cliente
-  (importe > 0, campos requeridos).
+- Pantalla **`/movimientos`** (protegida) estilo Fintonic: filtros de fecha
+  (con placeholder "Inicio/Fin", sin futuro, y botón para limpiarlas) y categoría
+  (con emoji), buscador, pestañas Todos/Gastos/Ingresos/No computable, y
+  **listado agrupado por fecha** con filas emoji + **punto de color por cubo**
+  (Vida=verde, Mes=amarillo, Inversión=azul…) + concepto (remarcado) + categoría
+  (atenuada) + importe (formateado en es-ES, con signo según el tipo).
+- **Fila desplegable (acordeón)** en vez de ventana flotante: al clicar muestra
+  el detalle y las acciones **Editar / Dividir / Borrar** en línea. Alta con
+  botón **"Añadir movimiento"** (diálogo).
+- **Mensajes de error específicos por campo** en login/registro (email, nick,
+  contraseña) con **borde rojo** en el campo en conflicto.
+- Componentes shadcn: **dialog**, **select**, **table**; validación en cliente.
 - Enlace desde el Dashboard a Movimientos.
 
 Testing
-- **Backend (TDD): 61 tests** (25 nuevos) — categorías, movimientos (CRUD,
-  orden, filtros, permisos, validaciones) y **precisión Decimal** (round-trip
-  sin float).
-- **Frontend: 24 tests** (Vitest) — formulario, página de movimientos (listar,
-  crear vía diálogo, borrar).
+- **Backend (TDD): 66 tests** — categorías, movimientos (CRUD, orden, filtros,
+  permisos, validaciones), **precisión Decimal**, **split** (suma exacta) y nick
+  con tildes.
+- **Frontend: 28 tests** (Vitest) — formulario, página de movimientos (listar,
+  crear, borrar, buscar, pestañas), **split** y mensajes de error por campo.
 - **E2E (Playwright)**: registro → movimientos → alta de un movimiento → verlo
   en el listado.
 
@@ -259,8 +266,8 @@ Resumen acumulado; se amplía en cada fase.
 
 ### Testing
 - Backend: pytest (SQLite en memoria para la suite; Postgres real para
-  migraciones en CI). **61 tests**.
-- Frontend: Vitest (**24 tests**) · Playwright E2E (auth + movimientos).
+  migraciones en CI). **66 tests**.
+- Frontend: Vitest (**28 tests**) · Playwright E2E (auth + movimientos).
 - Gates en CI: ruff, mypy, eslint, tsc, build.
 
 ### Diseño / UX

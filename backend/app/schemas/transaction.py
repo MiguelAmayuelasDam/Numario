@@ -49,6 +49,21 @@ class TransactionUpdate(BaseModel):
         return _quantize(value) if value is not None else None
 
 
+class TransactionSplitPart(BaseModel):
+    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    category_id: uuid.UUID | None = None
+
+    @field_validator("amount")
+    @classmethod
+    def _quantize_amount(cls, value: Decimal) -> Decimal:
+        return _quantize(value)
+
+
+class TransactionSplitRequest(BaseModel):
+    # Al menos 2 partes: dividir en 1 no tendría sentido.
+    parts: list[TransactionSplitPart] = Field(min_length=2)
+
+
 class TransactionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

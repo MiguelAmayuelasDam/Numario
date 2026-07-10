@@ -99,6 +99,7 @@ export function TransactionForm({
         <Input
           id="occurred_on"
           type="date"
+          max={today()}
           value={occurredOn}
           onChange={(e) => setOccurredOn(e.target.value)}
           required

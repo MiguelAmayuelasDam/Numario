@@ -10,10 +10,15 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.transaction import TransactionCreate, TransactionRead, TransactionUpdate
+from app.schemas.transaction import (
+    TransactionCreate,
+    TransactionRead,
+    TransactionSplitRequest,
+    TransactionUpdate,
+)
 from app.services import transaction_service
 from app.services.category_service import CategoryNotFoundError
-from app.services.transaction_service import TransactionNotFoundError
+from app.services.transaction_service import SplitAmountMismatchError, TransactionNotFoundError
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -93,6 +98,31 @@ def update_transaction(
         return transaction_service.update_transaction(db, user, transaction_id, changes)
     except TransactionNotFoundError as exc:
         raise _NOT_FOUND from exc
+    except CategoryNotFoundError as exc:
+        raise _INVALID_CATEGORY from exc
+
+
+@router.post(
+    "/{transaction_id}/split",
+    response_model=list[TransactionRead],
+    status_code=status.HTTP_201_CREATED,
+)
+def split_transaction(
+    transaction_id: uuid.UUID,
+    payload: TransactionSplitRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list:
+    parts = [(p.amount, p.category_id) for p in payload.parts]
+    try:
+        return transaction_service.split_transaction(db, user, transaction_id, parts)
+    except TransactionNotFoundError as exc:
+        raise _NOT_FOUND from exc
+    except SplitAmountMismatchError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Las partes deben sumar {exc.expected} € (suman {exc.got} €)",
+        ) from exc
     except CategoryNotFoundError as exc:
         raise _INVALID_CATEGORY from exc
 

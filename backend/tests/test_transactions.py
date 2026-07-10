@@ -121,3 +121,44 @@ def test_delete_transaction(
         client.delete(f"{TX}/{sample_transaction['id']}", headers=auth_headers).status_code == 204
     )
     assert client.get(f"{TX}/{sample_transaction['id']}", headers=auth_headers).status_code == 404
+
+
+def test_split_transaction_ok(
+    client: TestClient, auth_headers: dict[str, str], sample_transaction: dict
+) -> None:
+    # El sample vale 42.90; lo dividimos en 40.00 + 2.90.
+    response = client.post(
+        f"{TX}/{sample_transaction['id']}/split",
+        headers=auth_headers,
+        json={"parts": [{"amount": "40.00"}, {"amount": "2.90"}]},
+    )
+    assert response.status_code == 201, response.text
+    parts = response.json()
+    assert {p["amount"] for p in parts} == {"40.00", "2.90"}
+    # El original ya no existe; ahora hay 2 movimientos.
+    assert client.get(f"{TX}/{sample_transaction['id']}", headers=auth_headers).status_code == 404
+    assert len(client.get(TX, headers=auth_headers).json()) == 2
+
+
+def test_split_amount_mismatch_is_422(
+    client: TestClient, auth_headers: dict[str, str], sample_transaction: dict
+) -> None:
+    # 40.00 + 1.00 = 41.00 != 42.90 → 422 y el original se mantiene.
+    response = client.post(
+        f"{TX}/{sample_transaction['id']}/split",
+        headers=auth_headers,
+        json={"parts": [{"amount": "40.00"}, {"amount": "1.00"}]},
+    )
+    assert response.status_code == 422
+    assert client.get(f"{TX}/{sample_transaction['id']}", headers=auth_headers).status_code == 200
+
+
+def test_split_single_part_is_422(
+    client: TestClient, auth_headers: dict[str, str], sample_transaction: dict
+) -> None:
+    response = client.post(
+        f"{TX}/{sample_transaction['id']}/split",
+        headers=auth_headers,
+        json={"parts": [{"amount": "42.90"}]},
+    )
+    assert response.status_code == 422
