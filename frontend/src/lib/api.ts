@@ -122,12 +122,14 @@ export interface CategoryStat {
   emoji: string | null
   bucket: Bucket | null
   spent: string
+  forecast: string | null
 }
 
 export interface AnalyticsOverview {
   period_label: string
   date_from: string
   date_to: string
+  is_current: boolean
   summary: { income: string; expense: string; net: string }
   buckets: BucketStat[]
   categories: CategoryStat[]
@@ -300,6 +302,15 @@ export const api = {
     get: (): Promise<Budget> => request<Budget>("/budget", { auth: true }),
     update: (b: Budget): Promise<Budget> =>
       request<Budget>("/budget", { method: "PUT", body: b, auth: true }),
+  },
+
+  forecast: {
+    set: (category_id: string, amount: string): Promise<void> =>
+      request<void>("/forecast", {
+        method: "PUT",
+        body: { category_id, amount },
+        auth: true,
+      }),
   },
 
   analytics: {

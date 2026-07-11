@@ -151,6 +151,7 @@ export default function Analytics() {
   const [series, setSeries] = useState<SeriesPoint[]>([])
   const [budget, setBudget] = useState<Budget | null>(null)
   const [budgetOpen, setBudgetOpen] = useState(false)
+  const [forecasts, setForecasts] = useState<Record<string, string>>({})
 
   const loadOverview = useCallback(async () => {
     const [ov, bg] = await Promise.all([
@@ -172,6 +173,24 @@ export default function Analytics() {
   useEffect(() => {
     void loadSeries()
   }, [loadSeries])
+
+  // Inicializa los previstos editables desde el overview.
+  useEffect(() => {
+    if (!overview) return
+    const map: Record<string, string> = {}
+    for (const c of overview.categories) {
+      if (c.category_id) map[c.category_id] = c.forecast ?? ""
+    }
+    setForecasts(map)
+  }, [overview])
+
+  const setForecastValue = (id: string, v: string) =>
+    setForecasts((prev) => ({ ...prev, [id]: v }))
+
+  const saveForecast = (id: string) => {
+    const v = forecasts[id]
+    void api.forecast.set(id, v && v !== "" ? v : "0").catch(() => {})
+  }
 
   const switchGranularity = (g: Granularity) => {
     setGranularity(g)
@@ -289,7 +308,7 @@ export default function Analytics() {
               <p className="text-4xl font-bold" style={{ color: "#657280" }} data-testid="income">
                 {formatMoney(overview.summary.income)}
               </p>
-              <p className="text-sm font-medium" style={{ color: "#008030" }}>
+              <p className="text-sm font-medium" style={{ color: "#00C950" }}>
                 Ingresos
               </p>
             </div>
@@ -313,7 +332,7 @@ export default function Analytics() {
               </p>
             </div>
             <div>
-              <p className="text-4xl font-bold" data-testid="net">
+              <p className="text-4xl font-bold" style={{ color: "#657280" }} data-testid="net">
                 {formatMoney(overview.summary.net)}
               </p>
               <p className="text-sm text-muted-foreground">Neto ({overview.period_label})</p>
@@ -342,8 +361,15 @@ export default function Analytics() {
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-muted">
                     <div
-                      className={cn("h-full rounded-full", STATUS_BAR[b.status])}
-                      style={{ width: `${Math.min(100, b.pct)}%` }}
+                      className={cn(
+                        "h-full rounded-full",
+                        // Inversión siempre azul (pasarse invirtiendo no es malo).
+                        b.bucket !== "investment" && STATUS_BAR[b.status],
+                      )}
+                      style={{
+                        width: `${Math.min(100, b.pct)}%`,
+                        ...(b.bucket === "investment" ? { backgroundColor: "#2B7FFF" } : {}),
+                      }}
                     />
                   </div>
                 </div>
@@ -351,11 +377,70 @@ export default function Analytics() {
             </div>
           </div>
 
-          {/* Desglose por categoría (máx. 9 visibles; el resto con scroll) */}
+          {/* Categorías: en el mes en curso, Gastado vs Previsto; si no, solo gasto */}
           <div>
-            <h2 className="mb-2 font-semibold">Gastos por categoría</h2>
+            <h2 className="mb-2 font-semibold">
+              {overview.is_current ? "Categorías: gastado vs previsto" : "Gastos por categoría"}
+            </h2>
             {overview.categories.length === 0 ? (
               <p className="text-sm text-muted-foreground">Sin gastos en este periodo.</p>
+            ) : overview.is_current ? (
+              <div className="max-h-[34rem] overflow-y-auto pr-2">
+                <div className="flex items-center gap-3 border-b pb-1 text-xs text-muted-foreground">
+                  <span className="w-6" />
+                  <span className="flex-1">Categoría</span>
+                  <span className="w-20 text-right">Gastado</span>
+                  <span className="w-24 text-right">Previsto</span>
+                  <span className="w-24 text-right">Balance</span>
+                </div>
+                <ul className="divide-y">
+                  {overview.categories.map((c) => {
+                    const id = c.category_id
+                    const previstoStr = id ? (forecasts[id] ?? c.forecast ?? "") : ""
+                    const overage = Number(c.spent) - (Number(previstoStr) || 0)
+                    return (
+                      <li key={id ?? "none"} className="flex items-center gap-3 py-3">
+                        <span className="w-6 text-lg">{c.emoji ?? "🏷️"}</span>
+                        <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                        <span className="w-20 text-right font-semibold">{formatMoney(c.spent)}</span>
+                        <span className="w-24">
+                          {id ? (
+                            <span className="flex items-center rounded-md border px-2 py-1">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                aria-label={`Previsto de ${c.name}`}
+                                className="w-full bg-transparent text-right text-sm outline-none"
+                                placeholder="0"
+                                value={previstoStr}
+                                onChange={(e) => setForecastValue(id, e.target.value)}
+                                onBlur={() => saveForecast(id)}
+                              />
+                              <span className="ml-0.5 text-muted-foreground">€</span>
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="w-24 text-right text-xs leading-tight">
+                          {overage > 0 ? (
+                            <span style={{ color: "#FE5A5C" }}>
+                              {formatMoney(overage)}
+                              <br />
+                              Incrementado
+                            </span>
+                          ) : overage < 0 ? (
+                            <span className="text-green-600">
+                              {formatMoney(-overage)}
+                              <br />
+                              Ahorrado
+                            </span>
+                          ) : null}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
             ) : (
               <ul className="max-h-[34rem] space-y-5 overflow-y-auto pr-2">
                 {overview.categories.map((c) => (

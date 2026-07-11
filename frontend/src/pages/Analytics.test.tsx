@@ -13,6 +13,7 @@ const OVERVIEW = {
   period_label: "julio 2026",
   date_from: "2026-07-01",
   date_to: "2026-07-31",
+  is_current: true,
   summary: { income: "1000.00", expense: "300.00", net: "700.00" },
   buckets: [
     { bucket: "living", label: "Vida", budget: "500.00", spent: "100.00", pct: 20, status: "ok" },
@@ -20,8 +21,8 @@ const OVERVIEW = {
     { bucket: "investment", label: "Inversión", budget: "200.00", spent: "0.00", pct: 0, status: "ok" },
   ],
   categories: [
-    { category_id: "c1", name: "Restaurante", emoji: "🍕", bucket: "monthly", spent: "200.00" },
-    { category_id: "c2", name: "Supermercado", emoji: "🛒", bucket: "living", spent: "100.00" },
+    { category_id: "c1", name: "Restaurante", emoji: "🍕", bucket: "monthly", spent: "200.00", forecast: "50.00" },
+    { category_id: "c2", name: "Supermercado", emoji: "🛒", bucket: "living", spent: "100.00", forecast: null },
   ],
 }
 
@@ -31,10 +32,11 @@ const SERIES = [
 ]
 
 function installFetch() {
-  const fetchMock = vi.fn(async (url: string) => {
+  const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
     if (url.includes("/analytics/overview")) return json(200, OVERVIEW)
     if (url.includes("/analytics/series")) return json(200, SERIES)
     if (url.includes("/budget")) return json(200, { monthly_income: "1000.00", living_pct: 50, monthly_pct: 30, investment_pct: 20 })
+    if (url.includes("/forecast")) return json(204, null)
     return json(404, {})
   })
   vi.stubGlobal("fetch", fetchMock)
@@ -75,6 +77,30 @@ describe("Analytics", () => {
     // Categorías ordenadas: Restaurante (200) antes que Supermercado (100).
     expect(await screen.findByText("Restaurante")).toBeInTheDocument()
     expect(screen.getByText("Supermercado")).toBeInTheDocument()
+  })
+
+  it("permite editar el previsto en el mes en curso y lo guarda", async () => {
+    const fetchMock = installFetch()
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText("Restaurante")
+
+    const input = screen.getByLabelText("Previsto de Restaurante")
+    await user.clear(input)
+    await user.type(input, "80")
+    await user.tab() // blur → guarda
+
+    await waitFor(() => {
+      const putCall = fetchMock.mock.calls.find(
+        ([u, init]) =>
+          (u as string).includes("/forecast") && (init as RequestInit)?.method === "PUT",
+      )
+      expect(putCall).toBeTruthy()
+      expect(JSON.parse((putCall![1] as RequestInit).body as string)).toMatchObject({
+        category_id: "c1",
+        amount: "80",
+      })
+    })
   })
 
   it("cambia a periodo anual y refetcha", async () => {

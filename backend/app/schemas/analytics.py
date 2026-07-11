@@ -32,12 +32,14 @@ class CategoryStat(BaseModel):
     emoji: str | None
     bucket: str | None
     spent: MoneyStr
+    forecast: MoneyStr | None  # previsto (solo en el mes en curso)
 
 
 class AnalyticsOverview(BaseModel):
     period_label: str
     date_from: date
     date_to: date
+    is_current: bool  # el periodo es el mes actual (permite previsión)
     summary: Summary
     buckets: list[BucketStat]
     categories: list[CategoryStat]

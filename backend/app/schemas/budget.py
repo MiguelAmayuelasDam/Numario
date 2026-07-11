@@ -1,10 +1,16 @@
-"""Schemas de presupuesto (50-30-20 configurable)."""
+"""Schemas de presupuesto (50-30-20 configurable) y previsto por categoría."""
 
+import uuid
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.common import MoneyStr
+
+
+class ForecastUpdate(BaseModel):
+    category_id: uuid.UUID
+    amount: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
 
 
 class BudgetRead(BaseModel):

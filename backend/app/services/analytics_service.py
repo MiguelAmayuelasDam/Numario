@@ -4,6 +4,7 @@ Regla clave: los movimientos **No computables** (`type = transfer`) **no cuentan
 en ingresos, gastos, neto ni en los cubos 50-30-20.
 """
 
+import uuid
 from calendar import monthrange
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
@@ -21,9 +22,16 @@ from app.schemas.analytics import (
     SeriesPoint,
     Summary,
 )
-from app.services import budget_service
+from app.services import budget_service, forecast_service
 
 _CENTS = Decimal("0.01")
+# Categorías comunes por cubo que se ofrecen para previsión (mes en curso) aunque
+# aún no tengan gastos, para poder planificar a principio de mes.
+_COMMON_FORECAST = [
+    "Supermercado", "Hipoteca", "Alquiler y compra", "Electricidad", "Gasolina",
+    "Farmacia", "Móvil", "Restaurante", "Otros ocio", "Ropa",
+    "Servicios y productos online", "Belleza", "Inversiones", "Préstamos",
+]
 _MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
            "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 _MONTHS_SHORT = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL",
@@ -94,6 +102,10 @@ def overview(
             )
         )
 
+    # ¿El periodo es el mes en curso? Solo entonces se permite prever.
+    now = date.today()
+    is_current = granularity == "month" and year == now.year and month == now.month
+
     # Desglose de gastos por categoría (ordenado desc).
     cat_rows = db.execute(
         select(Transaction.category_id, func.coalesce(func.sum(Transaction.amount), 0))
@@ -105,23 +117,43 @@ def overview(
         )
         .group_by(Transaction.category_id)
     ).all()
+    spent_by_cat = {cid: Decimal(s or 0) for cid, s in cat_rows}
     cat_map = {c.id: c for c in db.scalars(select(Category)).all()}
+    forecasts = forecast_service.get_map(db, user) if is_current else {}
+
+    # Ids a mostrar: las que tienen gasto; en el mes actual, además las que tienen
+    # previsto y una lista de categorías comunes por cubo (para planificar).
+    include_ids: set[uuid.UUID | None] = set(spent_by_cat.keys())
+    if is_current:
+        include_ids |= set(forecasts.keys())
+        name_to_id = {c.name: c.id for c in cat_map.values() if c.user_id is None}
+        for name in _COMMON_FORECAST:
+            cid = name_to_id.get(name)
+            if cid is not None:
+                include_ids.add(cid)
+
     categories: list[CategoryStat] = []
-    for category_id, spent in cat_rows:
-        c = cat_map.get(category_id)
+    for category_id in include_ids:
+        c = cat_map.get(category_id) if category_id is not None else None
         categories.append(
             CategoryStat(
                 category_id=category_id,
                 name=c.name if c else "Sin categoría",
                 emoji=c.emoji if c else None,
                 bucket=c.bucket if c else None,
-                spent=Decimal(spent or 0),
+                spent=spent_by_cat.get(category_id, Decimal(0)),
+                forecast=(
+                    forecasts.get(category_id)
+                    if is_current and category_id is not None
+                    else None
+                ),
             )
         )
-    categories.sort(key=lambda x: x.spent, reverse=True)
+    # Primero las que tienen gasto (desc), luego las de solo previsión por nombre.
+    categories.sort(key=lambda x: (-x.spent, x.name))
 
     return AnalyticsOverview(
-        period_label=label, date_from=d_from, date_to=d_to,
+        period_label=label, date_from=d_from, date_to=d_to, is_current=is_current,
         summary=summary, buckets=buckets, categories=categories,
     )
 
