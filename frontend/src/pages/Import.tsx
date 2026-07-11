@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table"
 import { ApiError, api, type Category, type ImportSummary, type TransactionType } from "@/lib/api"
 import { amountClass, signedAmount } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 const NO_CATEGORY = "none"
 
@@ -34,11 +35,24 @@ interface EditableRow {
   categoryId: string
 }
 
-function SummaryChip({ label, value }: { label: string; value: number }) {
+function SummaryChip({
+  label,
+  value,
+  highlight,
+}: {
+  label: string
+  value: number
+  highlight?: boolean
+}) {
   return (
-    <div className="rounded-md border px-3 py-1.5 text-sm">
+    <div
+      className={cn(
+        "rounded-md border px-3 py-1.5 text-sm",
+        highlight && value > 0 && "border-amber-400 bg-amber-50 text-amber-800 dark:bg-amber-950/20",
+      )}
+    >
       <span className="font-semibold">{value}</span>{" "}
-      <span className="text-muted-foreground">{label}</span>
+      <span className={highlight && value > 0 ? "" : "text-muted-foreground"}>{label}</span>
     </div>
   )
 }
@@ -150,7 +164,7 @@ export default function Import() {
         <div className="mb-4 flex flex-wrap gap-2" data-testid="import-summary">
           <SummaryChip label="movimientos" value={summary.total} />
           <SummaryChip label="clasificados" value={summary.classified} />
-          <SummaryChip label="a revisar" value={summary.needs_review} />
+          <SummaryChip label="sin categorizar" value={summary.needs_review} highlight />
           <SummaryChip label="duplicados" value={summary.duplicates} />
           {summary.errors > 0 ? <SummaryChip label="con error" value={summary.errors} /> : null}
         </div>
@@ -177,8 +191,19 @@ export default function Import() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r, i) => (
-                <TableRow key={i} className={r.include ? "" : "opacity-50"}>
+              {rows.map((r, i) => {
+                // Resalta (en ámbar, no rojo: es válido guardarlo sin categoría)
+                // las filas que se van a importar y siguen sin categorizar.
+                const uncategorized = r.include && r.categoryId === NO_CATEGORY
+                return (
+                <TableRow
+                  key={i}
+                  className={cn(
+                    !r.include && "opacity-50",
+                    uncategorized &&
+                      "bg-amber-50 shadow-[inset_3px_0_0_0] shadow-amber-400 dark:bg-amber-950/20",
+                  )}
+                >
                   <TableCell>
                     <input
                       type="checkbox"
@@ -199,6 +224,11 @@ export default function Import() {
                         aprendida
                       </span>
                     ) : null}
+                    {uncategorized ? (
+                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                        Sin categorizar
+                      </span>
+                    ) : null}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{r.occurred_on}</TableCell>
                   <TableCell className={"whitespace-nowrap text-right font-semibold " + amountClass(r.type)}>
@@ -209,7 +239,13 @@ export default function Import() {
                       value={r.categoryId}
                       onValueChange={(v) => setRow(i, { categoryId: v })}
                     >
-                      <SelectTrigger aria-label={`Categoría de ${r.concept}`} className="min-w-44">
+                      <SelectTrigger
+                        aria-label={`Categoría de ${r.concept}`}
+                        className={cn(
+                          "min-w-44",
+                          uncategorized && "border-amber-400 ring-2 ring-amber-300/70",
+                        )}
+                      >
                         <SelectValue placeholder="Sin categoría" />
                       </SelectTrigger>
                       <SelectContent>
@@ -224,7 +260,8 @@ export default function Import() {
                     </Select>
                   </TableCell>
                 </TableRow>
-              ))}
+                )
+              })}
             </TableBody>
           </Table>
 

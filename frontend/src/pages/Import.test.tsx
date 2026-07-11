@@ -32,8 +32,18 @@ const PREVIEW = {
       source: null,
       duplicate: true,
     },
+    {
+      concept: "KONOGAN",
+      occurred_on: "2026-07-03",
+      amount: "7.70",
+      type: "expense",
+      suggested_category_id: null,
+      category: null,
+      source: null,
+      duplicate: false,
+    },
   ],
-  summary: { total: 2, classified: 1, needs_review: 1, duplicates: 1, errors: 0 },
+  summary: { total: 3, classified: 1, needs_review: 2, duplicates: 1, errors: 0 },
   error_details: [],
 }
 
@@ -83,8 +93,10 @@ describe("Import", () => {
     expect(screen.getByText("BAR FETICHE")).toBeInTheDocument()
     // Duplicado marcado.
     expect(screen.getByText("Duplicado")).toBeInTheDocument()
+    // La fila incluida sin categoría (KONOGAN) se marca visualmente.
+    expect(screen.getByText("Sin categorizar")).toBeInTheDocument()
     // Resumen.
-    expect(screen.getByTestId("import-summary")).toHaveTextContent("2")
+    expect(screen.getByTestId("import-summary")).toHaveTextContent("3")
   })
 
   it("confirma solo las filas incluidas y navega a movimientos", async () => {
@@ -103,7 +115,8 @@ describe("Import", () => {
     await waitFor(() => expect(screen.getByText("MOVIMIENTOS")).toBeInTheDocument())
     const confirmCall = fetchMock.mock.calls.find(([u]) => (u as string).includes("/import/confirm"))
     const body = JSON.parse((confirmCall![1] as RequestInit).body as string)
-    expect(body.items).toHaveLength(1)
-    expect(body.items[0].concept).toBe("MERCADONA JULIAN")
+    // El duplicado (BAR FETICHE) viene desmarcado; se confirman MERCADONA y KONOGAN.
+    const concepts = body.items.map((i: { concept: string }) => i.concept)
+    expect(concepts).toEqual(["MERCADONA JULIAN", "KONOGAN"])
   })
 })
