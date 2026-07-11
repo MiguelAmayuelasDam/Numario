@@ -15,6 +15,7 @@
 - [Fase 1 — Andamiaje y DevOps](#fase-1--andamiaje-y-devops)
 - [Fase 2 — Autenticación y seguridad base](#fase-2--autenticación-y-seguridad-base)
 - [Fase 3 — Núcleo de movimientos y categorías](#fase-3--núcleo-de-movimientos-y-categorías)
+- [Fase 4 — Importación CSV + clasificación](#fase-4--importación-csv--clasificación)
 - [Vista transversal por áreas](#vista-transversal-por-áreas)
 - [Leyenda de estado](#leyenda-de-estado)
 
@@ -247,6 +248,59 @@ Testing
 
 ---
 
+## Fase 4 — Importación CSV + clasificación
+
+**Objetivo.** Importar extractos bancarios en CSV con **previsualización antes de
+confirmar** (US-11, US-12) y **clasificación automática** que aprende de las
+correcciones, **sin depender de IAs externas de pago** (decisión del usuario).
+
+**Qué se implementó**
+
+Funcionalidad
+- **Importación CSV** (formato imagin/CaixaBank): subir extracto → **preview**
+  con categoría sugerida por fila, tipo, importe y **duplicados marcados** →
+  corregir → **confirmar**. Nada se persiste hasta confirmar.
+- **Clasificación en dos capas sin IA de pago**: 1) reglas **aprendidas** del
+  usuario (`classification_rule`, alimentadas por sus correcciones); 2) reglas
+  **semilla** (diccionario de ~80 comercios españoles → categoría). Lo no
+  reconocido queda "a revisar" y, al categorizarlo, **se aprende**.
+- **Deduplicación**: marca filas que ya existen (misma fecha, importe, tipo y
+  concepto) para no reimportarlas.
+
+Backend
+- Parser **tolerante** (`csv_import.py`): ignora metadatos, detecta la cabecera,
+  entiende el formato español (`-6,40EUR`, `11.766,93EUR`), `dd/mm/yyyy`, y
+  reporta filas malformadas sin romper. Encoding utf-8/cp1252. **Decimal**, no
+  float; el signo decide gasto/ingreso; traspasos → `transfer`.
+- Motor de clasificación (`classification.py`) con **capa de IA pluggable
+  apagada** (`ai_provider="none"`) como punto de extensión; coste 0.
+- Modelo `ClassificationRule` + migración `0006`; endpoints `POST /import/preview`
+  y `POST /import/confirm` (aprende al confirmar).
+
+Diseño / UX (frontend)
+- Pantalla **`/importar`**: subir archivo, resumen (total/clasificados/a revisar/
+  duplicados), tabla editable (categoría por fila con emoji, incluir/excluir,
+  badge "Duplicado" y "aprendida"), **"Confirmar importación (N)"**. Enlace desde
+  Movimientos.
+
+Testing
+- **Backend: 86 tests** — parser (número español, signo, traspaso, malformados,
+  encoding), clasificación (semilla/aprendida/none), preview (dedup + summary) y
+  confirm (persiste + aprende).
+- **Frontend: N tests** (Vitest) — preview y confirmación. **E2E** Playwright:
+  subir CSV → preview → confirmar → ver los movimientos importados.
+
+**Por qué / decisiones**
+- **Sin IA externa de pago**: el motor de reglas + aprendizaje cubre el caso y es
+  gratis, offline y desplegable en Render free. La arquitectura deja el hueco de
+  IA por si en el futuro se quiere (Ollama local o free-tier), pero **apagado**.
+- **CSV centrado en imagin** con parser tolerante (no genérico multibanco): más
+  robusto y suficiente para la demo.
+
+**Estado:** ✅ Completada.
+
+---
+
 ## Vista transversal por áreas
 
 Resumen acumulado; se amplía en cada fase.
@@ -266,8 +320,8 @@ Resumen acumulado; se amplía en cada fase.
 
 ### Testing
 - Backend: pytest (SQLite en memoria para la suite; Postgres real para
-  migraciones en CI). **66 tests**.
-- Frontend: Vitest (**28 tests**) · Playwright E2E (auth + movimientos).
+  migraciones en CI). **86 tests**.
+- Frontend: Vitest · Playwright E2E (auth + movimientos + importación).
 - Gates en CI: ruff, mypy, eslint, tsc, build.
 
 ### Diseño / UX

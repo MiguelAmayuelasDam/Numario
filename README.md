@@ -137,7 +137,9 @@ Cada carpeta tiene su propio README con el flujo sin Docker:
 - Fase 3 — Núcleo de movimientos y categorías ✅ (CRUD de movimientos con
   `Decimal`, categorías semilla 50-30-20, listado ordenado y filtros; pantalla
   de movimientos con alta/edición en diálogo; TDD, Vitest y E2E)
-- Fase 4 — Importación CSV e inteligencia ⏭️ (siguiente)
+- Fase 4 — Importación CSV e inteligencia ✅ (import de extractos con preview y
+  deduplicación; clasificación por reglas + aprendizaje, sin IA externa de pago)
+- Fase 5 — Dashboard, 50-30-20 y alertas ⏭️ (siguiente)
 
 ### Autenticación (Fase 2)
 

@@ -65,6 +65,39 @@ export interface SplitPart {
   category_id: string | null
 }
 
+export interface PreviewRow {
+  concept: string
+  occurred_on: string
+  amount: string
+  type: TransactionType
+  suggested_category_id: string | null
+  category: Category | null
+  source: "learned" | "rule" | null
+  duplicate: boolean
+}
+
+export interface ImportSummary {
+  total: number
+  classified: number
+  needs_review: number
+  duplicates: number
+  errors: number
+}
+
+export interface PreviewResponse {
+  rows: PreviewRow[]
+  summary: ImportSummary
+  error_details: string[]
+}
+
+export interface ConfirmItem {
+  amount: string
+  type: TransactionType
+  concept: string
+  occurred_on: string
+  category_id: string | null
+}
+
 export class ApiError extends Error {
   status: number
   fieldErrors: FieldErrors
@@ -109,20 +142,23 @@ async function buildApiError(response: Response): Promise<ApiError> {
 interface RequestOptions {
   method?: string
   body?: unknown
+  form?: FormData // subida de archivo (multipart); no se fija Content-Type
   auth?: boolean // adjunta el Bearer y reintenta con refresh en 401
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = "GET", body, auth = false } = options
+  const { method = "GET", body, form, auth = false } = options
 
   const doFetch = (): Promise<Response> => {
-    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    const headers: Record<string, string> = {}
+    // Con FormData el navegador pone el Content-Type (con boundary); no lo tocamos.
+    if (form === undefined) headers["Content-Type"] = "application/json"
     const access = tokenStore.getAccess()
     if (auth && access) headers.Authorization = `Bearer ${access}`
     return fetch(`${BASE}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
     })
   }
 
@@ -203,5 +239,15 @@ export const api = {
         body: { parts },
         auth: true,
       }),
+  },
+
+  imports: {
+    preview: (file: File): Promise<PreviewResponse> => {
+      const form = new FormData()
+      form.append("file", file)
+      return request<PreviewResponse>("/import/preview", { method: "POST", form, auth: true })
+    },
+    confirm: (items: ConfirmItem[]): Promise<{ created: number }> =>
+      request<{ created: number }>("/import/confirm", { method: "POST", body: { items }, auth: true }),
   },
 }

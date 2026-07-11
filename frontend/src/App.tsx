@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { AuthProvider } from "@/context/AuthContext"
 import Dashboard from "@/pages/Dashboard"
+import Import from "@/pages/Import"
 import Login from "@/pages/Login"
 import Register from "@/pages/Register"
 import Transactions from "@/pages/Transactions"
@@ -27,6 +28,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Transactions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/importar"
+            element={
+              <ProtectedRoute>
+                <Import />
               </ProtectedRoute>
             }
           />

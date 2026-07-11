@@ -219,11 +219,26 @@ Comprobaciones esperadas: registro `201`, contraseña débil `422`, nick duplica
    `Decimal`).
 2. Frontend en verde: `lint` + `typecheck` + `test` + `build`.
 3. Migraciones `0004`/`0005` aplicadas: `\dt` muestra `categories` y
-   `transactions`; hay 18 categorías semilla (`SELECT count(*) FROM categories`).
+   `transactions`; hay 79 categorías semilla (`SELECT count(*) FROM categories`).
 4. Flujo curl (con Bearer): listar categorías → crear movimiento → listar
    (orden reciente→antiguo) → filtrar por tipo/fecha → editar → borrar.
    `amount` debe viajar como **string** (`"42.90"`).
 5. E2E: `npm run test:e2e` (alta de movimiento) en verde.
+
+**Fase 4 (importación CSV + clasificación)**
+1. Backend en verde: `ruff` + `mypy` + `pytest` (parser, clasificación,
+   preview/confirm).
+2. Frontend en verde: `lint` + `typecheck` + `test` + `build`.
+3. Migración `0006` aplicada: `\dt` muestra `classification_rules`.
+4. Import (con Bearer): subir el CSV a `/import/preview` y confirmar en
+   `/import/confirm`:
+   ```bash
+   curl -s -X POST http://localhost:8000/api/v1/import/preview \
+     -H "Authorization: Bearer <ACCESS>" -F "file=@extracto.csv"
+   ```
+   Debe clasificar MERCADONA→Supermercado, BIZUM→traspaso, marcar duplicados al
+   repetir, y aprender la categoría al confirmar una corrección.
+5. E2E: `npm run test:e2e` (importar un CSV) en verde.
 
 > Este runbook se actualiza cuando una fase añade comandos nuevos (ver la tarea
 > permanente en `CLAUDE.md` §8).
