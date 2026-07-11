@@ -177,6 +177,9 @@ export default function Transactions() {
         <h1 className="text-3xl font-bold">Movimientos</h1>
         <div className="flex items-center gap-2">
           <Button variant="ghost" asChild>
+            <Link to="/analisis">Análisis</Link>
+          </Button>
+          <Button variant="ghost" asChild>
             <Link to="/">Inicio</Link>
           </Button>
           <Button variant="outline" onClick={() => void logout()}>

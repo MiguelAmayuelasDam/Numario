@@ -240,5 +240,15 @@ Comprobaciones esperadas: registro `201`, contraseña débil `422`, nick duplica
    repetir, y aprender la categoría al confirmar una corrección.
 5. E2E: `npm run test:e2e` (importar un CSV) en verde.
 
+**Fase 5 (análisis 50-30-20)**
+1. Backend en verde: `ruff` + `mypy` + `pytest` (budget + analytics).
+2. Frontend en verde: `lint` + `typecheck` + `test` + `build`.
+3. Migración `0007` aplicada: `\dt` muestra `budgets`.
+4. Análisis (con Bearer): crear ingreso + gasto + un `transfer`;
+   `GET /analytics/overview?granularity=month&year=&month=` → `net = income −
+   expense` (el `transfer` **no** cuenta); `PUT /budget` con `income` y % (deben
+   sumar 100) y ver los cubos con presupuesto y semáforo.
+5. E2E: `npm run test:e2e` (análisis) en verde.
+
 > Este runbook se actualiza cuando una fase añade comandos nuevos (ver la tarea
 > permanente en `CLAUDE.md` §8).

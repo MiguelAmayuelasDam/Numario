@@ -171,34 +171,45 @@ sistema **aprende** una regla (keyword → categoría) para futuras importacione
 
 ## Budget
 
-| Método | Ruta         | Descripción                        |
-| ------ | ------------ | ---------------------------------- |
-| GET    | `/budget`    | Obtener configuración 50-30-20     |
-| PUT    | `/budget`    | Actualizar ingreso y colchón       |
+| Método | Ruta         | Descripción                                    |
+| ------ | ------------ | ---------------------------------------------- |
+| GET    | `/budget`    | Configuración 50-30-20 (o defaults si no hay)  |
+| PUT    | `/budget`    | Actualizar ingreso mensual y porcentajes       |
+
+```json
+// GET/PUT /budget — los 3 porcentajes son CONFIGURABLES y deben sumar 100
+{ "monthly_income": "2000.00", "living_pct": 50, "monthly_pct": 30, "investment_pct": 20 }
+```
 
 ---
 
 ## Analytics
 
-| Método | Ruta                     | Descripción                              |
-| ------ | ------------------------ | ---------------------------------------- |
-| GET    | `/analytics/summary`     | Resumen del mes: ingresos, gastos, ahorro|
-| GET    | `/analytics/buckets`     | Consumo real vs. presupuesto por cubo    |
-| GET    | `/analytics/by-category` | Gasto agrupado por categoría             |
-| GET    | `/analytics/alerts`      | Alertas activas de presupuesto           |
+Regla: los movimientos **No computables** (`type = transfer`) **no cuentan** en
+ingresos, gastos, neto ni cubos.
 
-**GET /analytics/buckets**
+| Método | Ruta                    | Descripción                                     |
+| ------ | ----------------------- | ----------------------------------------------- |
+| GET    | `/analytics/overview`   | Resumen + cubos 50-30-20 + gasto por categoría  |
+| GET    | `/analytics/series`     | Serie ingresos/gastos por mes/año (navegador)   |
+
+Query params: `granularity=month\|year`, `year`, `month` (overview) · `count` (series).
+
+**GET /analytics/overview?granularity=month&year=2026&month=7**
 ```json
 {
-  "month": "2026-07",
-  "income": "2000.00",
+  "period_label": "julio 2026",
+  "date_from": "2026-07-01", "date_to": "2026-07-31",
+  "summary": { "income": "2000.00", "expense": "1360.00", "net": "640.00" },
   "buckets": [
-    { "bucket": "living",     "budget": "1000.00", "spent": "820.00", "pct": 82 },
-    { "bucket": "monthly",    "budget": "600.00",  "spent": "540.00", "pct": 90 },
-    { "bucket": "investment", "budget": "400.00",  "spent": "400.00", "pct": 100 }
-  ]
+    { "bucket": "living",     "label": "Vida",      "budget": "1000.00", "spent": "820.00", "pct": 82, "status": "warning" },
+    { "bucket": "monthly",    "label": "Mes",       "budget": "600.00",  "spent": "540.00", "pct": 90, "status": "warning" },
+    { "bucket": "investment", "label": "Inversión", "budget": "400.00",  "spent": "0.00",   "pct": 0,  "status": "ok" }
+  ],
+  "categories": [ { "category_id": "uuid", "name": "Supermercado", "emoji": "🛒", "bucket": "living", "spent": "420.00" } ]
 }
 ```
+`status`: `ok` (<80%) · `warning` (80–100%) · `over` (>100%) para el semáforo.
 
 ## Convenciones
 

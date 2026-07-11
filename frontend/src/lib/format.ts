@@ -19,6 +19,11 @@ const moneyFmt = new Intl.NumberFormat("es-ES", {
   maximumFractionDigits: 2,
 })
 
+// Importe formateado en es-ES sin signo (p. ej. "1.000,00 €").
+export function formatMoney(amount: string | number): string {
+  return `${moneyFmt.format(Number(amount))} €`
+}
+
 // Importe con signo según el tipo: −gasto, +ingreso, sin signo si no computable.
 export function signedAmount(amount: string, type: TransactionType): string {
   const value = moneyFmt.format(Number(amount))

@@ -96,8 +96,8 @@ Numario/
 
 ## 5. Plan de trabajo por fases
 
-El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 4
-completada; siguiente, Fase 5.**
+El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 5
+completada; siguiente, Fase 6.**
 
 ### Fase 0 — Análisis y diseño ✅
 Personas, user stories con MoSCoW, requisitos, modelo ER, contrato de API y ADR
@@ -141,11 +141,14 @@ La capa de IA queda **pluggable pero apagada** (`ai_provider="none"`) como punto
 de extensión. Tests con CSVs de ejemplo, incluidos malformados.
 - **Hito:** importar un extracto real y que se clasifique razonablemente solo. ✅
 
-### Fase 5 — Dashboard, 50-30-20 y alertas
-Agregación mensual, cálculo del reparto 50-30-20 (presupuesto vs. real),
-visualizaciones (barras/donut), semáforo por cubo, alertas proactivas de
-sobregasto e indicador de colchón de emergencia.
-- **Hito:** el dashboard responde a "¿ahorro o despilfarro este mes?".
+### Fase 5 — Dashboard / Análisis (50-30-20) ✅
+Pantalla `/analisis`: **Ingresos vs Gastos vs Neto** del periodo (excluye lo No
+computable, `type=transfer`), **reparto 50-30-20 con porcentajes configurables**
+por el usuario (default 50/30/20, deben sumar 100) y semáforo por cubo, desglose
+de gasto por categoría, y periodos **Meses/Años** con navegador de mini-barras.
+Modelo `Budget` (migración `0007`) + `analytics_service`. El **colchón de
+emergencia** y semanas/trimestres quedan fuera de esta fase.
+- **Hito:** el dashboard responde a "¿ahorro o despilfarro este mes?". ✅
 
 ### Fase 6 — Endurecimiento, calidad y cobertura
 Refactor guiado por KISS, eliminación de code smells, cobertura ≥ 70% en lógica

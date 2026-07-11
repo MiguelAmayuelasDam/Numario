@@ -139,7 +139,10 @@ Cada carpeta tiene su propio README con el flujo sin Docker:
   de movimientos con alta/edición en diálogo; TDD, Vitest y E2E)
 - Fase 4 — Importación CSV e inteligencia ✅ (import de extractos con preview y
   deduplicación; clasificación por reglas + aprendizaje, sin IA externa de pago)
-- Fase 5 — Dashboard, 50-30-20 y alertas ⏭️ (siguiente)
+- Fase 5 — Análisis / Dashboard ✅ (ingresos vs gastos vs neto excluyendo lo no
+  computable; 50-30-20 con porcentajes configurables y semáforo; gasto por
+  categoría; periodos meses/años)
+- Fase 6 — Endurecimiento, calidad y cobertura ⏭️ (siguiente)
 
 ### Autenticación (Fase 2)
 

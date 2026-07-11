@@ -34,9 +34,12 @@ export default function Dashboard() {
             Sesión iniciada correctamente. Aquí llegará tu dashboard financiero en las
             próximas fases.
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button asChild>
               <Link to="/movimientos">Ver movimientos</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/analisis">Análisis</Link>
             </Button>
             <Button variant="outline" onClick={() => void logout()}>
               Cerrar sesión

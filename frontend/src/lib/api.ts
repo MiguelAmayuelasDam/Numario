@@ -98,6 +98,51 @@ export interface ConfirmItem {
   category_id: string | null
 }
 
+export interface Budget {
+  monthly_income: string
+  living_pct: number
+  monthly_pct: number
+  investment_pct: number
+}
+
+export type BucketStatus = "ok" | "warning" | "over"
+
+export interface BucketStat {
+  bucket: Bucket
+  label: string
+  budget: string
+  spent: string
+  pct: number
+  status: BucketStatus
+}
+
+export interface CategoryStat {
+  category_id: string | null
+  name: string
+  emoji: string | null
+  bucket: Bucket | null
+  spent: string
+}
+
+export interface AnalyticsOverview {
+  period_label: string
+  date_from: string
+  date_to: string
+  summary: { income: string; expense: string; net: string }
+  buckets: BucketStat[]
+  categories: CategoryStat[]
+}
+
+export interface SeriesPoint {
+  label: string
+  year: number
+  month: number | null
+  income: string
+  expense: string
+}
+
+export type Granularity = "month" | "year"
+
 export class ApiError extends Error {
   status: number
   fieldErrors: FieldErrors
@@ -249,5 +294,24 @@ export const api = {
     },
     confirm: (items: ConfirmItem[]): Promise<{ created: number }> =>
       request<{ created: number }>("/import/confirm", { method: "POST", body: { items }, auth: true }),
+  },
+
+  budget: {
+    get: (): Promise<Budget> => request<Budget>("/budget", { auth: true }),
+    update: (b: Budget): Promise<Budget> =>
+      request<Budget>("/budget", { method: "PUT", body: b, auth: true }),
+  },
+
+  analytics: {
+    overview: (granularity: Granularity, year: number, month: number): Promise<AnalyticsOverview> =>
+      request<AnalyticsOverview>(
+        `/analytics/overview?granularity=${granularity}&year=${year}&month=${month}`,
+        { auth: true },
+      ),
+    series: (granularity: Granularity, count: number): Promise<SeriesPoint[]> =>
+      request<SeriesPoint[]>(
+        `/analytics/series?granularity=${granularity}&count=${count}`,
+        { auth: true },
+      ),
   },
 }

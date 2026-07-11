@@ -16,6 +16,7 @@
 - [Fase 2 — Autenticación y seguridad base](#fase-2--autenticación-y-seguridad-base)
 - [Fase 3 — Núcleo de movimientos y categorías](#fase-3--núcleo-de-movimientos-y-categorías)
 - [Fase 4 — Importación CSV + clasificación](#fase-4--importación-csv--clasificación)
+- [Fase 5 — Análisis / Dashboard (50-30-20)](#fase-5--análisis--dashboard-50-30-20)
 - [Vista transversal por áreas](#vista-transversal-por-áreas)
 - [Leyenda de estado](#leyenda-de-estado)
 
@@ -301,6 +302,53 @@ Testing
 
 ---
 
+## Fase 5 — Análisis / Dashboard (50-30-20)
+
+**Objetivo.** Responder a *"¿ahorro o despilfarro este mes?"* (US-17, US-18,
+US-21, US-22). Referencia visual: la pantalla "Análisis" de Fintonic.
+
+**Qué se implementó**
+
+Funcionalidad
+- **Ingresos vs Gastos vs Neto** del periodo (lo más importante). Cuenta todo
+  (ingresos y gastos de Vida/Mes/Inversión) y **excluye lo No computable**
+  (`type = transfer`).
+- **Reparto 50-30-20 configurable**: el usuario fija su **ingreso mensual** y los
+  **porcentajes** de Vida/Mes/Inversión (50/30/20 por defecto; puede poner
+  65-25-10…; deben sumar 100). Semáforo por cubo (verde/ámbar/rojo) según el
+  consumo del presupuesto.
+- **Desglose de gastos por categoría** (ordenado desc, con emoji y color de cubo).
+- **Periodos Meses y Años**, con **navegador de mini-barras** ingresos/gastos.
+
+Backend
+- Modelo `Budget` (ingreso + 3 % configurables, uno por usuario) + migración
+  `0007`; `budget_service` (get/upsert, validación suma 100).
+- `analytics_service`: `overview` (summary + cubos + categorías, excluye
+  `transfer`) y `series` (mini-barras). Endpoints `/budget` y `/analytics/*`.
+
+Diseño / UX (frontend)
+- Pantalla **`/analisis`**: selector Meses/Años, navegador, cifras Ingresos/
+  Gastos/Neto, cubos 50-30-20 con semáforo y **"Ajustar presupuesto"** (diálogo
+  con validación suma 100), y gastos por categoría. Gráficos con SVG/divs propios
+  (sin dependencia nueva). Enlaces desde Dashboard y Movimientos.
+
+Testing
+- **Backend: 95 tests** — budget (suma 100), analytics (excluye `transfer`, neto,
+  cubos con presupuesto configurable, orden por categoría, series).
+- **Frontend: 33 tests** (Vitest) + **E2E** que verifica que el `transfer` no
+  cuenta en el neto.
+
+**Por qué / decisiones**
+- **Excluir `transfer`** en todo el análisis (regla del usuario: "si no es
+  computable, nada").
+- **50-30-20 configurable**: la regla es estándar, pero el usuario decide su
+  propio reparto.
+- **Colchón de emergencia** y **semanas/trimestres**: fuera de esta fase.
+
+**Estado:** ✅ Completada.
+
+---
+
 ## Vista transversal por áreas
 
 Resumen acumulado; se amplía en cada fase.
@@ -320,8 +368,9 @@ Resumen acumulado; se amplía en cada fase.
 
 ### Testing
 - Backend: pytest (SQLite en memoria para la suite; Postgres real para
-  migraciones en CI). **86 tests**.
-- Frontend: Vitest · Playwright E2E (auth + movimientos + importación).
+  migraciones en CI). **95 tests**.
+- Frontend: Vitest (**33 tests**) · Playwright E2E (auth + movimientos +
+  importación + análisis).
 - Gates en CI: ruff, mypy, eslint, tsc, build.
 
 ### Diseño / UX
