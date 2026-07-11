@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/context/AuthContext"
 import { ApiError } from "@/lib/api"
+import type { FieldErrors } from "@/lib/validation"
 
 export default function Login() {
   const { login } = useAuth()
@@ -20,16 +21,20 @@ export default function Login() {
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [submitting, setSubmitting] = useState(false)
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
 
-    // Validación en cliente: evita mandar campos vacíos y mostrar el mensaje
-    // de validación del backend (en inglés).
-    if (identifier.trim() === "" || password === "") {
-      setError("Introduce tu email o nick y tu contraseña.")
+    // Validación en cliente: marca los campos vacíos sin llamar a la API.
+    const clientErrors: FieldErrors = {}
+    if (identifier.trim() === "") clientErrors.identifier = "Introduce tu email o nick."
+    if (password === "") clientErrors.password = "Introduce tu contraseña."
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors)
       return
     }
 
@@ -39,10 +44,11 @@ export default function Login() {
       navigate("/", { replace: true })
     } catch (err) {
       if (err instanceof ApiError) {
-        // Un 422 (validación) se traduce a un mensaje claro en español.
-        setError(
-          err.status === 422 ? "Revisa los datos introducidos." : err.message,
-        )
+        setFieldErrors(err.fieldErrors)
+        // 401 (credenciales) o mensajes sin campo concreto → error general.
+        if (Object.keys(err.fieldErrors).length === 0) {
+          setError(err.message || "No se pudo iniciar sesión")
+        }
       } else {
         setError("No se pudo iniciar sesión")
       }
@@ -68,8 +74,14 @@ export default function Login() {
                 autoComplete="username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
+                aria-invalid={!!fieldErrors.identifier}
                 required
               />
+              {fieldErrors.identifier ? (
+                <p className="text-xs text-destructive" role="alert">
+                  {fieldErrors.identifier}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
@@ -79,8 +91,14 @@ export default function Login() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={!!fieldErrors.password}
                 required
               />
+              {fieldErrors.password ? (
+                <p className="text-xs text-destructive" role="alert">
+                  {fieldErrors.password}
+                </p>
+              ) : null}
             </div>
             {error ? (
               <p className="text-sm text-destructive" role="alert">

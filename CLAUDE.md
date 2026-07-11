@@ -96,8 +96,8 @@ Numario/
 
 ## 5. Plan de trabajo por fases
 
-El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 2
-completada; siguiente, Fase 3.**
+El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 3
+completada; siguiente, Fase 4.**
 
 ### Fase 0 — Análisis y diseño ✅
 Personas, user stories con MoSCoW, requisitos, modelo ER, contrato de API y ADR
@@ -123,12 +123,14 @@ Refresh tokens **persistidos, rotables y revocables**. E2E de login con
 Playwright.
 - **Hito:** registro + login funcionando, cubiertos por tests unitarios y E2E. ✅
 
-### Fase 3 — Núcleo de movimientos y categorías
-Modelo `Transaction` con `Decimal` (nunca float), categorías semilla mapeadas a
-los cubos 50-30-20, CRUD completo, pantalla de movimientos con histórico
-ordenado (reciente → antiguo) y botón "Añadir movimiento". Tests unitarios y
-E2E del alta.
-- **Hito:** gestión manual de movimientos de principio a fin.
+### Fase 3 — Núcleo de movimientos y categorías ✅
+Modelos `Category` y `Transaction` con `Decimal` (nunca float; string en JSON).
+Categorías semilla globales mapeadas a los cubos 50-30-20 (migración `0004`) +
+categorías propias del usuario. CRUD completo de movimientos, listado ordenado
+(reciente → antiguo) con filtros (tipo/categoría/fechas), pantalla `/movimientos`
+con alta/edición en diálogo y borrado. Aislamiento por usuario. Tests unitarios
+(61 backend · 24 frontend) y E2E del alta.
+- **Hito:** gestión manual de movimientos de principio a fin. ✅
 
 ### Fase 4 — Importación CSV e inteligencia
 Importación CSV robusta (parseo, preview antes de confirmar, deduplicación,
@@ -160,9 +162,9 @@ arranque frío de Render).
 
 ## 6. Core obligatorio (checklist)
 
-- [ ] Registro/login
-- [ ] Gestión de movimientos
-- [ ] Categorías
+- [x] Registro/login
+- [x] Gestión de movimientos
+- [x] Categorías
 - [ ] Dashboard financiero
 - [ ] Regla 50-30-20
 - [ ] Importación CSV

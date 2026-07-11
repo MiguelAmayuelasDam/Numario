@@ -78,9 +78,8 @@ describe("Login", () => {
 
     await user.click(screen.getByRole("button", { name: "Entrar" }))
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Introduce tu email o nick y tu contraseña.",
-    )
+    expect(await screen.findByText("Introduce tu email o nick.")).toBeInTheDocument()
+    expect(screen.getByText("Introduce tu contraseña.")).toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
   })
 

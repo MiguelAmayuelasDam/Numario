@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext"
 import Dashboard from "@/pages/Dashboard"
 import Login from "@/pages/Login"
 import Register from "@/pages/Register"
+import Transactions from "@/pages/Transactions"
 
 export default function App() {
   return (
@@ -18,6 +19,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/movimientos"
+            element={
+              <ProtectedRoute>
+                <Transactions />
               </ProtectedRoute>
             }
           />

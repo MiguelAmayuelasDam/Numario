@@ -134,7 +134,10 @@ Cada carpeta tiene su propio README con el flujo sin Docker:
 - Fase 2 — Autenticación y seguridad base ✅ (registro con nick único y política
   de contraseña robusta, login por email/nick, JWT + refresh rotables y
   revocables, argon2id, rate limiting; TDD backend, Vitest y E2E Playwright)
-- Fase 3 — Núcleo de movimientos y categorías ⏭️ (siguiente)
+- Fase 3 — Núcleo de movimientos y categorías ✅ (CRUD de movimientos con
+  `Decimal`, categorías semilla 50-30-20, listado ordenado y filtros; pantalla
+  de movimientos con alta/edición en diálogo; TDD, Vitest y E2E)
+- Fase 4 — Importación CSV e inteligencia ⏭️ (siguiente)
 
 ### Autenticación (Fase 2)
 

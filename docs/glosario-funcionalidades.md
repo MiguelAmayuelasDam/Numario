@@ -14,6 +14,7 @@
 - [Fase 0 — Análisis y diseño](#fase-0--análisis-y-diseño)
 - [Fase 1 — Andamiaje y DevOps](#fase-1--andamiaje-y-devops)
 - [Fase 2 — Autenticación y seguridad base](#fase-2--autenticación-y-seguridad-base)
+- [Fase 3 — Núcleo de movimientos y categorías](#fase-3--núcleo-de-movimientos-y-categorías)
 - [Vista transversal por áreas](#vista-transversal-por-áreas)
 - [Leyenda de estado](#leyenda-de-estado)
 
@@ -160,6 +161,92 @@ Testing
 
 ---
 
+## Fase 3 — Núcleo de movimientos y categorías
+
+**Objetivo.** Primer bloque de dominio financiero: **gestión manual de
+movimientos y categorías** de principio a fin (US-06, US-07, US-08, US-09 Must;
+US-10 filtros, Should). Base para la importación CSV (Fase 4) y el dashboard
+50-30-20 (Fase 5).
+
+**Qué se implementó**
+
+Funcionalidad
+- **Categorías** con **emoji** y mapeadas a los cubos 50-30-20
+  (`living`/`monthly`/`investment`/`income`) más `transfer` (no computable):
+  **79 semilla globales** por defecto + categorías propias del usuario
+  (crear/editar/borrar las suyas).
+- **Movimientos (CRUD completo)**: alta manual, listado **ordenado de más
+  reciente a más antiguo** y **agrupado por fecha**, edición y borrado.
+- Tres tipos de movimiento: **Gasto**, **Ingreso** y **No computable**
+  (`transfer`: traspaso entre cuentas, ni gasto ni ingreso).
+- **Dividir un movimiento** en varias partes por categoría (p. ej. un Bizum de
+  7 € = 5 € comida + 2 € gasolina). Endpoint `POST /transactions/{id}/split`;
+  las partes deben sumar **exactamente** el importe original (si no, `422`).
+- **Filtros** por fecha (inicio→fin, sin fechas futuras) y categoría (servidor) +
+  **buscador por concepto** y **pestañas** por tipo (cliente).
+- Asignación de categoría a cada movimiento (opcional).
+
+Datos / reglas
+- Modelos **`Category`** y **`Transaction`**; `amount` es **`NUMERIC(12,2)` /
+  `Decimal`, nunca float**, y viaja en JSON como **string** (`"42.90"`) para no
+  perder precisión (regla §7.1).
+- Migraciones **`0004_create_categories`** (crea la tabla y **siembra** las
+  globales desde `app/db/default_categories.py`, fuente única de verdad) y
+  **`0005_create_transactions`** (con índice `(user_id, occurred_on)`).
+- Categoría por defecto **global** (`user_id = NULL`, `is_default = true`),
+  compartida; borrar una categoría deja el movimiento sin clasificar
+  (`ON DELETE SET NULL`).
+
+Seguridad / API
+- Todos los endpoints bajo `/api/v1` **protegidos** con `get_current_user`; cada
+  usuario solo ve y toca **lo suyo** (movimiento ajeno → 404; categoría por
+  defecto no editable → 403; categoría ajena en un movimiento → 422).
+- Validación estricta (importe > 0, `type` ∈ {income, expense}, `bucket` válido).
+
+Diseño / UX (frontend)
+- Pantalla **`/movimientos`** (protegida) estilo Fintonic: filtros de fecha
+  (con placeholder "Inicio/Fin", sin futuro, y botón para limpiarlas) y categoría
+  (con emoji), buscador, pestañas Todos/Gastos/Ingresos/No computable, y
+  **listado agrupado por fecha** con filas emoji + **punto de color por cubo**
+  (Vida=verde, Mes=amarillo, Inversión=azul…) + concepto (remarcado) + categoría
+  (atenuada) + importe (formateado en es-ES, con signo según el tipo).
+- **Fila desplegable (acordeón)** en vez de ventana flotante: al clicar muestra
+  el detalle y las acciones **Editar / Dividir / Borrar** en línea. Alta con
+  botón **"Añadir movimiento"** (diálogo).
+- **Mensajes de error específicos por campo** en login/registro (email, nick,
+  contraseña) con **borde rojo** en el campo en conflicto.
+- Componentes shadcn: **dialog**, **select**, **table**; validación en cliente.
+- Enlace desde el Dashboard a Movimientos.
+
+Testing
+- **Backend (TDD): 66 tests** — categorías, movimientos (CRUD, orden, filtros,
+  permisos, validaciones), **precisión Decimal**, **split** (suma exacta) y nick
+  con tildes.
+- **Frontend: 28 tests** (Vitest) — formulario, página de movimientos (listar,
+  crear, borrar, buscar, pestañas), **split** y mensajes de error por campo.
+- **E2E (Playwright)**: registro → movimientos → alta de un movimiento → verlo
+  en el listado.
+
+**Por qué / decisiones**
+- **Decimal/NUMERIC + string en JSON**: precisión monetaria innegociable
+  (regla §7.1); el frontend manda un decimal válido y el backend lo **cuantiza**
+  a 2 decimales (fuente de verdad).
+- **Categorías globales** en vez de copiarlas por usuario: KISS, sin duplicar
+  datos ni tocar el registro.
+- **`category_id` opcional** en el movimiento: necesario para la importación de
+  la Fase 4 (movimientos pendientes de clasificar).
+
+**Artefactos clave**
+- Backend: `app/models/{category,transaction}.py`, `app/db/default_categories.py`,
+  `app/services/{category_service,transaction_service}.py`,
+  `app/api/v1/{categories,transactions}.py`, migraciones `0004`/`0005`.
+- Frontend: `src/pages/Transactions.tsx`, `src/components/TransactionForm.tsx`,
+  `src/components/ui/{dialog,select,table}.tsx`, ampliación de `src/lib/api.ts`.
+
+**Estado:** ✅ Completada.
+
+---
+
 ## Vista transversal por áreas
 
 Resumen acumulado; se amplía en cada fase.
@@ -168,22 +255,26 @@ Resumen acumulado; se amplía en cada fase.
 - FastAPI · SQLAlchemy 2.0 · Alembic · PostgreSQL · `uv` (backend).
 - React 19 · TypeScript · Vite · Tailwind v4 · shadcn/ui · react-router-dom (frontend).
 - Docker Compose (3 servicios) · GitHub Actions (CI).
+- Dinero con **`Decimal`/`NUMERIC`** (nunca float); importes como string en JSON.
 
 ### Seguridad
 - argon2id · JWT HS256 · refresh opacos (sha256) rotables y revocables.
 - Rate limiting en login · validación Pydantic · UUID como PK · secretos por
   entorno · anti-enumeración (tiempo constante) · política de contraseña.
+- Aislamiento por usuario en todos los recursos (movimientos/categorías propios).
 - Mapeo OWASP en `docs/security/01-owasp-autenticacion.md`.
 
 ### Testing
 - Backend: pytest (SQLite en memoria para la suite; Postgres real para
-  migraciones en CI). 36 tests.
-- Frontend: Vitest (17 tests) · Playwright E2E.
+  migraciones en CI). **66 tests**.
+- Frontend: Vitest (**28 tests**) · Playwright E2E (auth + movimientos).
 - Gates en CI: ruff, mypy, eslint, tsc, build.
 
 ### Diseño / UX
-- Componentes shadcn/ui (button, input, label, card).
+- Componentes shadcn/ui (button, input, label, card, dialog, select, table).
 - Flujo de auth con rutas protegidas, medidor de fuerza y checklist en vivo.
+- Pantalla de movimientos con tabla, alta/edición en diálogo y borrado con
+  confirmación.
 - Mensajería en español.
 
 ---

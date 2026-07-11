@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from "@/context/AuthContext"
 import { ApiError } from "@/lib/api"
 import { evaluatePassword } from "@/lib/password"
+import type { FieldErrors } from "@/lib/validation"
 
 export default function Register() {
   const { register } = useAuth()
@@ -24,6 +25,7 @@ export default function Register() {
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [submitting, setSubmitting] = useState(false)
 
   const passwordValid = evaluatePassword(password, { email, nickname }).valid
@@ -34,6 +36,7 @@ export default function Register() {
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     setError(null)
+    setFieldErrors({})
     if (!canSubmit) return
     setSubmitting(true)
     try {
@@ -41,7 +44,10 @@ export default function Register() {
       navigate("/", { replace: true })
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.status === 422 ? "Revisa los datos introducidos." : err.message)
+        setFieldErrors(err.fieldErrors)
+        if (Object.keys(err.fieldErrors).length === 0) {
+          setError(err.message || "No se pudo completar el registro")
+        }
       } else {
         setError("No se pudo completar el registro")
       }
@@ -69,8 +75,14 @@ export default function Register() {
                 autoComplete="username"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
+                aria-invalid={!!fieldErrors.nickname}
                 required
               />
+              {fieldErrors.nickname ? (
+                <p className="text-xs text-destructive" role="alert">
+                  {fieldErrors.nickname}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -80,8 +92,14 @@ export default function Register() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={!!fieldErrors.email}
                 required
               />
+              {fieldErrors.email ? (
+                <p className="text-xs text-destructive" role="alert">
+                  {fieldErrors.email}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
@@ -91,8 +109,14 @@ export default function Register() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={!!fieldErrors.password}
                 required
               />
+              {fieldErrors.password ? (
+                <p className="text-xs text-destructive" role="alert">
+                  {fieldErrors.password}
+                </p>
+              ) : null}
               <PasswordStrength password={password} identity={{ email, nickname }} />
             </div>
             <div className="space-y-2">
@@ -103,6 +127,7 @@ export default function Register() {
                 autoComplete="new-password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
+                aria-invalid={showMismatch}
                 required
               />
               {showMismatch ? (

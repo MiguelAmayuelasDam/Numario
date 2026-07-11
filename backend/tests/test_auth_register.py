@@ -72,3 +72,11 @@ def test_register_invalid_nickname_pattern_is_422(client: TestClient) -> None:
     payload = {**USER_CREDENTIALS, "nickname": "espacios prohibidos"}
     response = client.post(REGISTER, json=payload)
     assert response.status_code == 422
+
+
+def test_register_accepts_accented_nickname(client: TestClient) -> None:
+    # Tildes y ñ deben aceptarse (caracteres del español).
+    payload = {**USER_CREDENTIALS, "nickname": "Jośé_Muñoz"}
+    response = client.post(REGISTER, json=payload)
+    assert response.status_code == 201, response.text
+    assert response.json()["nickname"] == "jośé_muñoz"

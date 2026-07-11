@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom"
+
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -32,9 +34,14 @@ export default function Dashboard() {
             Sesión iniciada correctamente. Aquí llegará tu dashboard financiero en las
             próximas fases.
           </p>
-          <Button variant="outline" onClick={() => void logout()}>
-            Cerrar sesión
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild>
+              <Link to="/movimientos">Ver movimientos</Link>
+            </Button>
+            <Button variant="outline" onClick={() => void logout()}>
+              Cerrar sesión
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </main>

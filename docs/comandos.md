@@ -57,6 +57,14 @@ docker compose down -v             # además borra el volumen de datos (DB limpi
 > (`docker-entrypoint.sh`). Si cambias credenciales o el esquema queda
 > inconsistente en dev, `docker compose down -v` y vuelve a subir.
 
+> **Al añadir dependencias del frontend** (nuevas librerías en `package.json`),
+> el contenedor `frontend` reutiliza un volumen anónimo con los `node_modules`
+> antiguos y Vite fallará con `Failed to resolve import ...`. Fuerza su
+> recreación:
+> ```powershell
+> docker compose up -d --build --renew-anon-volumes frontend
+> ```
+
 ---
 
 ## Base de datos y migraciones
@@ -205,6 +213,17 @@ Comprobaciones esperadas: registro `201`, contraseña débil `422`, nick duplica
    `users` y `refresh_tokens`.
 4. Flujo curl de auth con los códigos esperados de arriba.
 5. E2E: `npm run test:e2e` en verde.
+
+**Fase 3 (movimientos y categorías)**
+1. Backend en verde: `ruff` + `mypy` + `pytest` (incluye tests de precisión
+   `Decimal`).
+2. Frontend en verde: `lint` + `typecheck` + `test` + `build`.
+3. Migraciones `0004`/`0005` aplicadas: `\dt` muestra `categories` y
+   `transactions`; hay 18 categorías semilla (`SELECT count(*) FROM categories`).
+4. Flujo curl (con Bearer): listar categorías → crear movimiento → listar
+   (orden reciente→antiguo) → filtrar por tipo/fecha → editar → borrar.
+   `amount` debe viajar como **string** (`"42.90"`).
+5. E2E: `npm run test:e2e` (alta de movimiento) en verde.
 
 > Este runbook se actualiza cuando una fase añade comandos nuevos (ver la tarea
 > permanente en `CLAUDE.md` §8).

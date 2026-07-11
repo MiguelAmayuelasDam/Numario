@@ -29,8 +29,8 @@ Todos los endpoints salvo autenticación requieren cabecera
 ```
 
 Reglas:
-- `nickname`: obligatorio y **único** (3–30, `[a-zA-Z0-9_.-]`). Se normaliza a
-  minúsculas, igual que el email.
+- `nickname`: obligatorio y **único** (3–30). Admite letras (incl. tildes, ñ, ü…),
+  números y `. _ -`, sin espacios. Se normaliza a minúsculas, igual que el email.
 - `password`: ≥ 8 con mayúscula, minúscula, número y símbolo; no puede ser una
   contraseña común ni contener el email o el nick. Fallo → `422` con la lista de
   requisitos incumplidos.
@@ -65,19 +65,51 @@ El refresh **rota**: cada renovación revoca el token usado y emite uno nuevo
 | GET    | `/transactions/{id}`     | Detalle                              |
 | PATCH  | `/transactions/{id}`     | Editar                               |
 | DELETE | `/transactions/{id}`     | Eliminar                             |
+| POST   | `/transactions/{id}/split` | Dividir en varias categorías       |
 
 Query params de listado: `from`, `to`, `category_id`, `type`, `page`, `size`.
+El listado va **ordenado de más reciente a más antiguo** (`occurred_on` desc).
 
-**POST /transactions**
+**POST /transactions** (request)
 ```json
 {
   "amount": "42.90",
   "type": "expense",
   "concept": "Mercadona",
   "occurred_on": "2026-07-03",
-  "category_id": "uuid"   // opcional; si falta, se intenta clasificar
+  "category_id": "uuid"   // opcional; puede quedar sin categoría
 }
 ```
+Reglas: `amount` > 0 como **string decimal** (2 decimales; se cuantiza en el
+servidor). `type` ∈ {`income`, `expense`, `transfer`} (`transfer` = **No
+computable**: traspaso, ni gasto ni ingreso). `category_id` debe ser global o
+del usuario (si no, `422`).
+
+**Respuesta 201 / 200** (incluye la categoría anidada y el origen)
+```json
+{
+  "id": "uuid",
+  "amount": "42.90",
+  "type": "expense",
+  "concept": "Mercadona",
+  "occurred_on": "2026-07-03",
+  "category_id": "uuid",
+  "category": { "id": "uuid", "name": "Supermercado", "bucket": "living", "emoji": "🛒", "is_default": true },
+  "source": "manual",
+  "created_at": "2026-07-03T10:00:00Z"
+}
+```
+
+**POST /transactions/{id}/split** — divide un movimiento en varias partes por
+categoría (p. ej. un Bizum de 7 € = 5 € comida + 2 € gasolina).
+```json
+// request (al menos 2 partes; heredan tipo, concepto y fecha del original)
+{ "parts": [ { "amount": "5.00", "category_id": "uuid" },
+             { "amount": "2.00", "category_id": "uuid" } ] }
+// response 201 → lista de los movimientos creados (el original se elimina)
+```
+La suma de las partes debe coincidir **exactamente** con el importe original; si
+no, `422` con el detalle (`Las partes deben sumar X € (suman Y €)`).
 
 ---
 
