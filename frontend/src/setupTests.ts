@@ -21,3 +21,18 @@ if (!("ResizeObserver" in globalThis)) {
     disconnect() {}
   }
 }
+if (!window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent() {
+        return false
+      },
+    }) as unknown as MediaQueryList
+}

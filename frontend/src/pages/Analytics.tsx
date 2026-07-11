@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -221,6 +222,7 @@ export default function Analytics() {
       <header className="mb-4 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Análisis</h1>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Button variant="ghost" asChild>
             <Link to="/movimientos">Movimientos</Link>
           </Button>

@@ -374,7 +374,10 @@ Resumen acumulado; se amplía en cada fase.
 - Gates en CI: ruff, mypy, eslint, tsc, build.
 
 ### Diseño / UX
-- Componentes shadcn/ui (button, input, label, card, dialog, select, table).
+- **Tema claro/oscuro** con toggle, persistencia (localStorage) y respeto de la
+  preferencia del sistema; sin parpadeo al cargar.
+- Componentes shadcn/ui (button, input, label, card, dialog, select, table,
+  popover, calendar).
 - Flujo de auth con rutas protegidas, medidor de fuerza y checklist en vivo.
 - Pantalla de movimientos con tabla, alta/edición en diálogo y borrado con
   confirmación.

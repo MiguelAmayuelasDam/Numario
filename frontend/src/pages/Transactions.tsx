@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { ChevronDown, Search } from "lucide-react"
 
 import { SplitTransaction } from "@/components/SplitTransaction"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { TransactionForm } from "@/components/TransactionForm"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -176,6 +177,7 @@ export default function Transactions() {
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Movimientos</h1>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Button variant="ghost" asChild>
             <Link to="/analisis">Análisis</Link>
           </Button>

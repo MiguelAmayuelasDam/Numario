@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -34,7 +35,7 @@ export default function Dashboard() {
             Sesión iniciada correctamente. Aquí llegará tu dashboard financiero en las
             próximas fases.
           </p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button asChild>
               <Link to="/movimientos">Ver movimientos</Link>
             </Button>
@@ -44,6 +45,7 @@ export default function Dashboard() {
             <Button variant="outline" onClick={() => void logout()}>
               Cerrar sesión
             </Button>
+            <ThemeToggle />
           </div>
         </CardContent>
       </Card>

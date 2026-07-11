@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -133,9 +134,12 @@ export default function Import() {
     <main className="mx-auto max-w-5xl p-4 sm:p-8">
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Importar movimientos</h1>
-        <Button variant="ghost" asChild>
-          <Link to="/movimientos">Volver a movimientos</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Button variant="ghost" asChild>
+            <Link to="/movimientos">Volver a movimientos</Link>
+          </Button>
+        </div>
       </header>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -220,12 +224,12 @@ export default function Import() {
                       </span>
                     ) : null}
                     {r.source === "learned" ? (
-                      <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
+                      <span className="ml-2 rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700 dark:bg-green-900/40 dark:text-green-300">
                         aprendida
                       </span>
                     ) : null}
                     {uncategorized ? (
-                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">
+                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
                         Sin categorizar
                       </span>
                     ) : null}

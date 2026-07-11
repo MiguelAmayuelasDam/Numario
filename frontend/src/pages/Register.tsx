@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 
 import { PasswordStrength } from "@/components/PasswordStrength"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -59,7 +60,8 @@ export default function Register() {
   const showMismatch = confirm.length > 0 && !passwordsMatch
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
+    <main className="relative flex min-h-screen items-center justify-center p-4">
+      <ThemeToggle className="absolute right-4 top-4" />
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Crear cuenta</CardTitle>
