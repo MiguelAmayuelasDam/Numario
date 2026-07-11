@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -134,15 +134,19 @@ describe("Transactions", () => {
     expect(Number(body.amount)).toBe(15.5)
   })
 
-  it("despliega la fila y borra el movimiento", async () => {
+  it("despliega la fila y borra el movimiento tras confirmar en el modal", async () => {
     installFetch([tx({ id: "t1", concept: "Gimnasio" })])
-    vi.spyOn(window, "confirm").mockReturnValue(true)
     const user = userEvent.setup()
     renderPage()
 
     // Clic en la fila la despliega (acordeón) con las acciones.
     await user.click(await screen.findByText("Gimnasio"))
     await user.click(await screen.findByRole("button", { name: "Borrar" }))
+
+    // Se abre un modal de confirmación (no el confirm nativo).
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByText(/¿Seguro que quieres borrar/)).toBeInTheDocument()
+    await user.click(within(dialog).getByRole("button", { name: "Borrar" }))
 
     await waitFor(() => expect(screen.queryByText("Gimnasio")).not.toBeInTheDocument())
   })

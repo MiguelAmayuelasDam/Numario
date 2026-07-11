@@ -5,11 +5,12 @@ import { ChevronDown, Search } from "lucide-react"
 import { SplitTransaction } from "@/components/SplitTransaction"
 import { TransactionForm } from "@/components/TransactionForm"
 import { Button } from "@/components/ui/button"
-import { DateInput } from "@/components/ui/date-input"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -82,6 +83,9 @@ export default function Transactions() {
   const [createSubmitting, setCreateSubmitting] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
+  // Movimiento pendiente de confirmar su borrado (modal propio).
+  const [confirmDelete, setConfirmDelete] = useState<Transaction | null>(null)
+
   useEffect(() => {
     api.categories.list().then(setCategories).catch(() => setCategories([]))
   }, [])
@@ -143,9 +147,11 @@ export default function Transactions() {
     }
   }
 
-  const handleDelete = async (t: Transaction) => {
-    if (!window.confirm(`¿Borrar el movimiento "${t.concept}"?`)) return
-    await api.transactions.remove(t.id)
+  const performDelete = async () => {
+    if (!confirmDelete) return
+    const target = confirmDelete
+    setConfirmDelete(null)
+    await api.transactions.remove(target.id)
     await reloadAndCollapse()
   }
 
@@ -184,23 +190,23 @@ export default function Transactions() {
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Fechas</span>
-            <DateInput
+            <DatePicker
               placeholder="Inicio"
               aria-label="Fecha de inicio"
               value={dateFrom}
               onChange={setDateFrom}
               max={dateTo || today}
-              className="w-36"
+              className="w-40"
             />
             <span className="text-muted-foreground">a</span>
-            <DateInput
+            <DatePicker
               placeholder="Fin"
               aria-label="Fecha de fin"
               value={dateTo}
               onChange={setDateTo}
               min={dateFrom || undefined}
               max={today}
-              className="w-36"
+              className="w-40"
             />
           </div>
           {hasDateFilter ? (
@@ -282,7 +288,7 @@ export default function Transactions() {
         <div>
           {groups.map((group) => (
             <section key={group.date}>
-              <h2 className="bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              <h2 className="bg-[#F3F6F9] px-3 py-1.5 text-xs font-medium text-muted-foreground dark:bg-muted/40">
                 {formatDateHeader(group.date)}
               </h2>
               <ul>
@@ -362,7 +368,7 @@ export default function Transactions() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => void handleDelete(t)}
+                                onClick={() => setConfirmDelete(t)}
                               >
                                 Borrar
                               </Button>
@@ -417,6 +423,27 @@ export default function Transactions() {
             error={createError}
             onSubmit={handleCreate}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmación de borrado */}
+      <Dialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Borrar movimiento</DialogTitle>
+            <DialogDescription>
+              ¿Seguro que quieres borrar «{confirmDelete?.concept}»? Esta acción no se puede
+              deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDelete(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={() => void performDelete()}>
+              Borrar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </main>
