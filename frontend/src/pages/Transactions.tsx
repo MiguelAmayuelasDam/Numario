@@ -272,9 +272,14 @@ export default function Transactions() {
             </button>
           ))}
         </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          Añadir movimiento
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/importar">Importar CSV</Link>
+          </Button>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            Añadir movimiento
+          </Button>
+        </div>
       </div>
 
       {/* Listado agrupado por fecha */}

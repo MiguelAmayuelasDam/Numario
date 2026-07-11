@@ -96,8 +96,8 @@ Numario/
 
 ## 5. Plan de trabajo por fases
 
-El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 3
-completada; siguiente, Fase 4.**
+El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 4
+completada; siguiente, Fase 5.**
 
 ### Fase 0 — Análisis y diseño ✅
 Personas, user stories con MoSCoW, requisitos, modelo ER, contrato de API y ADR
@@ -132,13 +132,14 @@ con alta/edición en diálogo y borrado. Aislamiento por usuario. Tests unitario
 (61 backend · 24 frontend) y E2E del alta.
 - **Hito:** gestión manual de movimientos de principio a fin. ✅
 
-### Fase 4 — Importación CSV e inteligencia
-Importación CSV robusta (parseo, preview antes de confirmar, deduplicación,
-manejo de errores). Clasificación en **dos capas**: motor de reglas primero, IA
-en **lote** como respaldo con salida JSON estructurada. Feedback loop que
-aprende de las correcciones (tabla `classification_rule`). Tests con CSVs de
-ejemplo, incluidos malformados.
-- **Hito:** importar un extracto real y que se clasifique razonablemente solo.
+### Fase 4 — Importación CSV e inteligencia ✅
+Importación CSV robusta (formato imagin/CaixaBank; parseo tolerante, preview
+antes de confirmar, deduplicación, manejo de errores). Clasificación en **dos
+capas SIN IA de pago** (decisión del usuario): motor de **reglas** (diccionario
+de comercios) + **aprendizaje** de las correcciones (tabla `classification_rule`).
+La capa de IA queda **pluggable pero apagada** (`ai_provider="none"`) como punto
+de extensión. Tests con CSVs de ejemplo, incluidos malformados.
+- **Hito:** importar un extracto real y que se clasifique razonablemente solo. ✅
 
 ### Fase 5 — Dashboard, 50-30-20 y alertas
 Agregación mensual, cálculo del reparto 50-30-20 (presupuesto vs. real),
@@ -167,8 +168,8 @@ arranque frío de Render).
 - [x] Categorías
 - [ ] Dashboard financiero
 - [ ] Regla 50-30-20
-- [ ] Importación CSV
-- [ ] Clasificación inteligente con IA
+- [x] Importación CSV
+- [x] Clasificación inteligente (reglas + aprendizaje; sin IA de pago)
 - [ ] Tests
 - [ ] Docker
 - [ ] CI/CD básico

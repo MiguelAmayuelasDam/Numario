@@ -1,4 +1,4 @@
-import type { Bucket, Transaction } from "@/lib/api"
+import type { Bucket, Transaction, TransactionType } from "@/lib/api"
 
 // Color y etiqueta por cubo 50-30-20 (para el punto de color de cada categoría).
 export const BUCKET_META: Record<Bucket, { label: string; dot: string }> = {
@@ -20,11 +20,21 @@ const moneyFmt = new Intl.NumberFormat("es-ES", {
 })
 
 // Importe con signo según el tipo: −gasto, +ingreso, sin signo si no computable.
-export function formatSignedAmount(t: Transaction): string {
-  const value = moneyFmt.format(Number(t.amount))
-  if (t.type === "expense") return `−${value} €`
-  if (t.type === "income") return `+${value} €`
+export function signedAmount(amount: string, type: TransactionType): string {
+  const value = moneyFmt.format(Number(amount))
+  if (type === "expense") return `−${value} €`
+  if (type === "income") return `+${value} €`
   return `${value} €`
+}
+
+export function formatSignedAmount(t: Transaction): string {
+  return signedAmount(t.amount, t.type)
+}
+
+export function amountClass(type: TransactionType): string {
+  if (type === "income") return "text-green-600"
+  if (type === "transfer") return "text-muted-foreground"
+  return "text-foreground"
 }
 
 const dateHeaderFmt = new Intl.DateTimeFormat("es-ES", {

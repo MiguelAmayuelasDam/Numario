@@ -131,20 +131,41 @@ no, `422` con el detalle (`Las partes deben sumar X € (suman Y €)`).
 | POST   | `/import/preview`   | Subir CSV, devolver filas parseadas + clasif. |
 | POST   | `/import/confirm`   | Persistir los movimientos previsualizados     |
 
-**POST /import/preview** (multipart/form-data con el fichero)
+Formato de CSV soportado: **extracto imagin/CaixaBank** (separador `;`, importe
+español `-6,40EUR`, fecha `dd/mm/yyyy`; se ignoran las líneas de metadatos). El
+**signo** decide gasto/ingreso; los traspasos → `transfer` (no computable).
+
+**POST /import/preview** (multipart/form-data, campo `file`)
 ```json
-// response 200
+// response 200 — no persiste nada; solo previsualiza
 {
   "rows": [
     {
-      "amount": "42.90", "type": "expense",
-      "concept": "Mercadona", "occurred_on": "2026-07-03",
-      "suggested_category_id": "uuid", "confidence": 0.95, "source": "rule"
+      "concept": "MERCADONA JULIAN", "occurred_on": "2026-06-24",
+      "amount": "13.18", "type": "expense",
+      "suggested_category_id": "uuid",
+      "category": { "id": "uuid", "name": "Supermercado", "bucket": "living", "emoji": "🛒", "is_default": true },
+      "source": "rule",          // "learned" | "rule" | null
+      "duplicate": false          // ya existe un movimiento idéntico
     }
   ],
-  "summary": { "total": 120, "classified": 98, "needs_review": 22 }
+  "summary": { "total": 120, "classified": 98, "needs_review": 22, "duplicates": 3, "errors": 0 },
+  "error_details": ["Línea 45: Fila inválida: ..."]
 }
 ```
+Clasificación **sin IA de pago**: reglas semilla (comercios) + reglas aprendidas
+de las correcciones del usuario (`classification_rule`).
+
+**POST /import/confirm**
+```json
+// request — solo las filas que el usuario confirma (con su categoría, opcional)
+{ "items": [ { "amount": "13.18", "type": "expense", "concept": "MERCADONA JULIAN",
+               "occurred_on": "2026-06-24", "category_id": "uuid" } ] }
+// response 201
+{ "created": 1 }
+```
+Al confirmar, si el usuario cambia la categoría respecto a la sugerencia, el
+sistema **aprende** una regla (keyword → categoría) para futuras importaciones.
 
 ---
 

@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     # Rate limiting (formato de slowapi: "<n>/<periodo>")
     rate_limit_login: str = "5/minute"
 
+    # Clasificación: proveedor de IA opcional (apagado por defecto → coste 0).
+    # "none" = solo reglas + aprendizaje. Punto de extensión para el futuro.
+    ai_provider: str = "none"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
