@@ -110,6 +110,7 @@ function BudgetDialog({
               id="income"
               type="number"
               min="0"
+              max="9999999"
               step="0.01"
               value={budget.monthly_income}
               onChange={(e) => setBudget({ ...budget, monthly_income: e.target.value })}
@@ -190,7 +191,7 @@ export default function Analytics() {
 
   const saveForecast = (id: string) => {
     const v = forecasts[id]
-    void api.forecast.set(id, v && v !== "" ? v : "0").catch(() => {})
+    void api.forecast.set(id, v && v !== "" ? v : "0").catch(() => { })
   }
 
   const switchGranularity = (g: Granularity) => {
@@ -327,7 +328,7 @@ export default function Analytics() {
                   · unos{" "}
                   {formatMoney(
                     Number(overview.summary.expense) /
-                      daysElapsed(overview.date_from, overview.date_to),
+                    daysElapsed(overview.date_from, overview.date_to),
                   )}
                   /día
                 </span>
@@ -411,6 +412,7 @@ export default function Analytics() {
                               <input
                                 type="number"
                                 min="0"
+                                max="9999999"
                                 step="0.01"
                                 aria-label={`Previsto de ${c.name}`}
                                 className="w-full bg-transparent text-right text-sm outline-none"
