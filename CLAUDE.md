@@ -96,8 +96,8 @@ Numario/
 
 ## 5. Plan de trabajo por fases
 
-El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 5
-completada; siguiente, Fase 6.**
+El proyecto se ejecuta en 7 fases secuenciales. **Estado actual: Fase 6
+completada; siguiente, Fase 7.**
 
 ### Fase 0 — Análisis y diseño ✅
 Personas, user stories con MoSCoW, requisitos, modelo ER, contrato de API y ADR
@@ -150,11 +150,14 @@ Modelo `Budget` (migración `0007`) + `analytics_service`. El **colchón de
 emergencia** y semanas/trimestres quedan fuera de esta fase.
 - **Hito:** el dashboard responde a "¿ahorro o despilfarro este mes?". ✅
 
-### Fase 6 — Endurecimiento, calidad y cobertura
+### Fase 6 — Endurecimiento, calidad y cobertura ✅
 Refactor guiado por KISS, eliminación de code smells, cobertura ≥ 70% en lógica
-de negocio, suite E2E de los happy paths, escaneo de seguridad en CI (Bandit,
-pip-audit, npm audit), revisión del OWASP Top 10 con mitigaciones documentadas.
-- **Hito:** código limpio, CI con gates de calidad y seguridad.
+de negocio (gates: backend `fail_under=80` ~97% · frontend `@vitest/coverage-v8`),
+suite E2E de los happy paths (7 specs), escaneo de seguridad en CI (Bandit,
+pip-audit, npm audit — 0 hallazgos), revisión del OWASP Top 10 documentada
+(`docs/security/02-owasp-top-10.md`) + endurecimientos (cabeceras de seguridad,
+límite de subida CSV).
+- **Hito:** código limpio, CI con gates de calidad y seguridad. ✅
 
 ### Fase 7 — Despliegue y documentación de defensa
 Deploy en Vercel (front) y Render (back + DB) con secretos bien gestionados.
@@ -173,10 +176,10 @@ arranque frío de Render).
 - [x] Regla 50-30-20
 - [x] Importación CSV
 - [x] Clasificación inteligente (reglas + aprendizaje; sin IA de pago)
-- [ ] Tests
-- [ ] Docker
-- [ ] CI/CD básico
-- [ ] Seguridad básica
+- [x] Tests (123 backend · 45 frontend · 7 E2E; cobertura con gates)
+- [x] Docker (Docker Compose: frontend + backend + postgres)
+- [x] CI/CD básico (GitHub Actions: lint, tipos, tests, cobertura, seguridad, E2E)
+- [x] Seguridad básica (auth, OWASP Top 10, escaneo de deps + estático en CI)
 
 Alcance por prioridad (MoSCoW) en `docs/analysis/02-user-stories.md`.
 
@@ -234,3 +237,4 @@ Estas reglas deben respetarse siempre al escribir código:
 - `docs/architecture/02-contrato-api.md` — contrato de la API REST
 - `docs/decisions/0001-stack-tecnologico.md` — ADR del stack
 - `docs/security/01-owasp-autenticacion.md` — controles de seguridad de auth
+- `docs/security/02-owasp-top-10.md` — mapeo OWASP Top 10 (mitigaciones + huecos)

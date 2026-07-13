@@ -442,6 +442,39 @@ el **dashboard de Inicio**.
 
 ---
 
+## Fase 6 — Endurecimiento, calidad y cobertura
+
+Bloque de calidad: refactor KISS, cobertura con gates, escaneo de seguridad en
+CI y revisión OWASP. Sin funcionalidad nueva de usuario; endurece lo existente.
+
+- **Refactor / code smells:** utilidades duplicadas centralizadas — backend
+  `quantize_money`/`CENTS` (antes en 5 módulos) y helper `_get_or_create_budget`;
+  frontend `lib/money.ts` (`MAX_AMOUNT`/`withinCap`) y `daysElapsed` en `lib/format`.
+  Corregido un hueco: la **importación CSV** ahora respeta el tope de importe.
+- **Cobertura con gates:** backend `pytest-cov` (`fail_under=80`, actual ~97%);
+  frontend `@vitest/coverage-v8` con umbrales (stmts/líneas 75, ramas 70, funcs 65;
+  actual ~85/79/72), excluyendo las primitivas shadcn. Ambos superan el hito ≥70%.
+- **Escaneo de seguridad en CI** (job `security`): **Bandit** (0 issues),
+  **pip-audit** y **npm audit** (0 vulnerabilidades). La única alerta de Bandit
+  (mitigación de timing) se documenta con `# nosec`.
+- **Endurecimientos:** cabeceras de seguridad (`X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, HSTS) y **límite de subida CSV** (2 MiB,
+  anti-DoS). Rate limit de login leído de forma **dinámica** (configurable por
+  entorno, testeable).
+- **OWASP Top 10** mapeado en `docs/security/02-owasp-top-10.md`.
+
+**Por qué / decisiones**
+- Centralizar en tokens/utilidades es a la vez estilo consistente y menos code smells.
+- Gates por debajo del valor actual: cortan regresiones sin ser frágiles.
+- Escaneo shift-left (regla §7.4): seguridad verificada en cada push.
+
+**Testing:** 123 backend · 45 frontend · **7 E2E** (auth, movimientos, importación,
+análisis, colchón, dashboard, perfil).
+
+**Estado:** ✅ Completada.
+
+---
+
 ## Vista transversal por áreas
 
 Resumen acumulado; se amplía en cada fase.
