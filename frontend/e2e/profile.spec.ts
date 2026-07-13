@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test } from "@playwright/test"
 
 // Happy path del perfil: registro → cambiar el nick → verlo reflejado en la
 // barra superior.

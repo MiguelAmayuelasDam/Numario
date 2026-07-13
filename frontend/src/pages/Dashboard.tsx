@@ -213,7 +213,6 @@ function bucketMessage(b: BucketStat): { title: string; text: string; tone: Tone
 }
 
 export default function Dashboard() {
-  const today = new Date()
   const navigate = useNavigate()
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null)
   const [budget, setBudget] = useState<Budget | null>(null)
@@ -222,6 +221,7 @@ export default function Dashboard() {
   const [fund, setFund] = useState<EmergencyFund | null>(null)
 
   useEffect(() => {
+    const today = new Date()
     const year = today.getFullYear()
     const month = today.getMonth() + 1
     void Promise.all([
@@ -237,7 +237,6 @@ export default function Dashboard() {
       setRecent(tx)
       setFund(ef)
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const pace = useMemo(() => {
