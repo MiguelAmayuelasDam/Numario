@@ -66,7 +66,7 @@ export default function Profile() {
               {error}
             </p>
           ) : null}
-          {saved ? <p className="text-sm text-green-600">Nick actualizado.</p> : null}
+          {saved ? <p className="text-sm text-income">Nick actualizado.</p> : null}
         </div>
 
         <div className="space-y-1.5">

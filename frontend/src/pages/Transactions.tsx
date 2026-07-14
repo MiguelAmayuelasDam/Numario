@@ -51,7 +51,7 @@ const TABS: { key: Tab; label: string }[] = [
 const ALL_CATEGORIES = "all"
 
 function amountClass(type: Transaction["type"]): string {
-  if (type === "income") return "text-green-600"
+  if (type === "income") return "text-income"
   if (type === "transfer") return "text-muted-foreground"
   return "text-foreground"
 }
@@ -283,7 +283,7 @@ export default function Transactions() {
         <div>
           {groups.map((group) => (
             <section key={group.date}>
-              <h2 className="bg-[#F3F6F9] px-3 py-1.5 text-xs font-medium text-muted-foreground dark:bg-muted/40">
+              <h2 className="bg-[var(--secondary)] px-3 py-1.5 text-xs font-medium text-muted-foreground dark:bg-muted/40">
                 {formatDateHeader(group.date)}
               </h2>
               <ul>

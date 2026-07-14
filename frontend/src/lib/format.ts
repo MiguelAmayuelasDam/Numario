@@ -2,10 +2,10 @@ import type { Bucket, Transaction, TransactionType } from "@/lib/api"
 
 // Color y etiqueta por cubo 50-30-20 (para el punto de color de cada categoría).
 export const BUCKET_META: Record<Bucket, { label: string; dot: string }> = {
-  living: { label: "Vida (50%)", dot: "bg-green-500" },
-  monthly: { label: "Mes (30%)", dot: "bg-amber-500" },
-  investment: { label: "Inversión (20%)", dot: "bg-blue-500" },
-  income: { label: "Ingresos", dot: "bg-violet-500" },
+  living: { label: "Vida (50%)", dot: "bg-income" },
+  monthly: { label: "Mes (30%)", dot: "bg-bucket-amber" },
+  investment: { label: "Inversión (20%)", dot: "bg-invest" },
+  income: { label: "Ingresos", dot: "bg-primary" },
   transfer: { label: "No computable", dot: "bg-gray-400" },
 }
 
@@ -48,7 +48,7 @@ export function formatSignedAmount(t: Transaction): string {
 }
 
 export function amountClass(type: TransactionType): string {
-  if (type === "income") return "text-green-600"
+  if (type === "income") return "text-income"
   if (type === "transfer") return "text-muted-foreground"
   return "text-foreground"
 }

@@ -27,9 +27,9 @@ import { MAX_AMOUNT, withinCap } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 const STATUS_BAR: Record<BucketStat["status"], string> = {
-  ok: "bg-green-500",
-  warning: "bg-amber-500",
-  over: "bg-red-500",
+  ok: "bg-income",
+  warning: "bg-bucket-amber",
+  over: "bg-expense",
 }
 
 type Pcts = { living_pct: number; monthly_pct: number; investment_pct: number }
@@ -321,11 +321,11 @@ export default function Analytics() {
             >
               <div className="flex h-12 items-end gap-0.5">
                 <div
-                  className="w-2 rounded-t bg-green-500"
+                  className="w-2 rounded-t bg-income"
                   style={{ height: `${(Number(p.income) / maxVal) * 100}%` }}
                 />
                 <div
-                  className="w-2 rounded-t bg-red-500"
+                  className="w-2 rounded-t bg-expense"
                   style={{ height: `${(Number(p.expense) / maxVal) * 100}%` }}
                 />
               </div>
@@ -356,19 +356,19 @@ export default function Analytics() {
           {/* Ingresos / Gastos / Neto */}
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-4xl font-bold" style={{ color: "#657280" }} data-testid="income">
+              <p className="text-4xl font-bold" style={{ color: "var(--foreground)" }} data-testid="income">
                 {formatMoney(overview.summary.income)}
               </p>
-              <p className="text-sm font-medium" style={{ color: "#00C950" }}>
+              <p className="text-sm font-medium" style={{ color: "var(--income)" }}>
                 Ingresos
               </p>
             </div>
             <div>
-              <p className="text-4xl font-bold" style={{ color: "#657280" }} data-testid="expense">
+              <p className="text-4xl font-bold" style={{ color: "var(--foreground)" }} data-testid="expense">
                 {formatMoney(overview.summary.expense)}
               </p>
               <p className="text-sm">
-                <span className="font-medium" style={{ color: "#FE5A5C" }}>
+                <span className="font-medium" style={{ color: "var(--expense)" }}>
                   Gastos
                 </span>
                 <span className="text-muted-foreground">
@@ -383,7 +383,7 @@ export default function Analytics() {
               </p>
             </div>
             <div>
-              <p className="text-4xl font-bold" style={{ color: "#657280" }} data-testid="net">
+              <p className="text-4xl font-bold" style={{ color: "var(--foreground)" }} data-testid="net">
                 {formatMoney(overview.summary.net)}
               </p>
               <p className="text-sm text-muted-foreground">Neto ({overview.period_label})</p>
@@ -419,7 +419,7 @@ export default function Analytics() {
                       )}
                       style={{
                         width: `${Math.min(100, b.pct)}%`,
-                        ...(b.bucket === "investment" ? { backgroundColor: "#2B7FFF" } : {}),
+                        ...(b.bucket === "investment" ? { backgroundColor: "var(--invest)" } : {}),
                       }}
                     />
                   </div>
@@ -477,13 +477,13 @@ export default function Analytics() {
                         </span>
                         <span className="w-24 text-right text-xs leading-tight">
                           {overage > 0 ? (
-                            <span style={{ color: "#FE5A5C" }}>
+                            <span style={{ color: "var(--expense)" }}>
                               {formatMoney(overage)}
                               <br />
                               Incrementado
                             </span>
                           ) : overage < 0 ? (
-                            <span className="text-green-600">
+                            <span className="text-income">
                               {formatMoney(-overage)}
                               <br />
                               Ahorrado

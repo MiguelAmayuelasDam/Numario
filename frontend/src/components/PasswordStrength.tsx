@@ -62,7 +62,7 @@ export function PasswordStrength({
               key={req.key}
               className={cn(
                 "flex items-center gap-1.5 text-xs",
-                ok ? "text-green-600" : "text-muted-foreground",
+                ok ? "text-income" : "text-muted-foreground",
               )}
             >
               {ok ? <Check className="size-3.5" /> : <X className="size-3.5" />}

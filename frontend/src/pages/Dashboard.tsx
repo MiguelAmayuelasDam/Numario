@@ -54,14 +54,14 @@ function NetDonut({
                 cx={mid}
                 cy={mid}
                 r={r}
-                stroke="#22c55e"
+                stroke="var(--income)"
                 strokeDasharray={`${greenFrac * c} ${c - greenFrac * c}`}
               />
               <circle
                 cx={mid}
                 cy={mid}
                 r={r}
-                stroke="#ef4444"
+                stroke="var(--expense)"
                 strokeDasharray={`${redFrac * c} ${c - redFrac * c}`}
                 strokeDashoffset={-greenFrac * c}
               />
@@ -71,7 +71,7 @@ function NetDonut({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span
-          className={cn("whitespace-nowrap text-3xl font-bold", negative && "text-red-500")}
+          className={cn("whitespace-nowrap text-3xl font-bold", negative && "text-expense")}
           data-testid="dash-net"
         >
           {formatMoney(net)}
@@ -80,9 +80,9 @@ function NetDonut({
       </div>
       {/* Popup con el detalle al pasar el ratón */}
       <div className="pointer-events-none absolute left-1/2 top-0 z-10 hidden -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border bg-popover px-3 py-1.5 text-xs shadow-md group-hover:block">
-        <span className="text-green-600">Ingresos {formatMoney(income)}</span>
+        <span className="text-income">Ingresos {formatMoney(income)}</span>
         <span className="mx-1.5 text-muted-foreground">·</span>
-        <span className="text-red-500">Gastos {formatMoney(expense)}</span>
+        <span className="text-expense">Gastos {formatMoney(expense)}</span>
       </div>
     </div>
   )
@@ -113,11 +113,11 @@ function MiniBars({
         >
           <div className="flex h-14 items-end gap-0.5">
             <div
-              className="w-2 rounded-t bg-green-500"
+              className="w-2 rounded-t bg-income"
               style={{ height: `${(Number(p.income) / maxVal) * 100}%` }}
             />
             <div
-              className="w-2 rounded-t bg-red-500"
+              className="w-2 rounded-t bg-expense"
               style={{ height: `${(Number(p.expense) / maxVal) * 100}%` }}
             />
           </div>
@@ -131,10 +131,10 @@ function MiniBars({
 type Tone = "good" | "warn" | "bad" | "info"
 
 const TONE_STYLE: Record<Tone, string> = {
-  good: "border-l-green-500",
-  warn: "border-l-amber-500",
-  bad: "border-l-red-500",
-  info: "border-l-blue-500",
+  good: "border-l-income",
+  warn: "border-l-bucket-amber",
+  bad: "border-l-expense",
+  info: "border-l-invest",
 }
 
 // Batería de mensajes por cubo y situación: cada cubo tiene su propia voz para
@@ -287,7 +287,7 @@ export default function Dashboard() {
         <section className="flex flex-col rounded-xl border p-4 shadow-md lg:col-span-2">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold">Cómo llevas tu {allocLabel}</h2>
-            <Link to="/analisis" className="text-sm text-blue-600 hover:underline">
+            <Link to="/analisis" className="text-sm text-primary hover:underline">
               Ver análisis
             </Link>
           </div>
@@ -308,7 +308,7 @@ export default function Dashboard() {
         <section className="rounded-xl border p-4 shadow-md lg:col-span-1">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold">Colchón de emergencia</h2>
-            <Link to="/colchon" className="text-sm text-blue-600 hover:underline">
+            <Link to="/colchon" className="text-sm text-primary hover:underline">
               Ver detalle
             </Link>
           </div>
@@ -322,7 +322,7 @@ export default function Dashboard() {
                 <div
                   className={cn(
                     "h-full rounded-full",
-                    fund.pct >= 100 ? "bg-green-500" : "bg-blue-500",
+                    fund.pct >= 100 ? "bg-income" : "bg-invest",
                   )}
                   style={{ width: `${fundPct}%` }}
                 />
@@ -338,7 +338,7 @@ export default function Dashboard() {
         <section className="rounded-xl border p-4 shadow-md lg:col-span-2">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="font-semibold">Últimos movimientos</h2>
-            <Link to="/movimientos" className="text-sm text-blue-600 hover:underline">
+            <Link to="/movimientos" className="text-sm text-primary hover:underline">
               Ver todos
             </Link>
           </div>

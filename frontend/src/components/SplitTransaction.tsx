@@ -136,7 +136,7 @@ export function SplitTransaction({
 
       <div className="border-t pt-2 text-right text-sm">
         <span className="text-muted-foreground">Total </span>
-        <span className={remainingCents === 0 ? "font-semibold text-green-600" : "font-semibold text-destructive"}>
+        <span className={remainingCents === 0 ? "font-semibold text-income" : "font-semibold text-destructive"}>
           {euros(sumCents)}
         </span>
         <span className="text-muted-foreground"> / {euros(totalCents)}</span>
