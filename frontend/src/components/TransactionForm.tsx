@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -97,14 +98,14 @@ export function TransactionForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="occurred_on">Fecha</Label>
-        <Input
-          id="occurred_on"
-          type="date"
-          max={today()}
+        <Label>Fecha</Label>
+        <DatePicker
           value={occurredOn}
-          onChange={(e) => setOccurredOn(e.target.value)}
-          required
+          onChange={setOccurredOn}
+          max={today()}
+          placeholder="Elige una fecha"
+          aria-label="Fecha"
+          className="w-full"
         />
       </div>
 
