@@ -473,6 +473,35 @@ análisis, colchón, dashboard, perfil).
 
 **Estado:** ✅ Completada.
 
+### Identidad visual propia
+
+Hasta aquí la app vestía el **tema por defecto de shadcn** (gris pizarra): sin
+color de marca, sin voz tipográfica y con **colores del dinero hardcodeados e
+inconsistentes** (el verde de ingresos era `#00C950` en Análisis pero `#22c55e`
+en el Dashboard). Se le da identidad propia:
+
+- **Tipografía Archivo** (grotesque) autohospedada (`@fontsource`, sin depender
+  de CDN) y **`tabular-nums` en toda la app**: los importes alinean y se comparan
+  de un vistazo — en finanzas el dato *es* el producto.
+- **Paleta propia**: blanco cálido + tinta con **acento azul tinta usado con
+  cuentagotas** (botones, enlaces, foco), esquinas rectas. Claro y oscuro
+  diseñados por separado; en oscuro el fondo es `#1e1e26` y las superficies suben
+  en consecuencia (tarjetas `#262630`…) para conservar la jerarquía de elevación.
+- **Tokens semánticos del dinero**: `--income`, `--expense`, `--invest` y
+  `--bucket-amber` (utilidades `text-income`, `bg-income`…), que **sustituyen los
+  hex sueltos**. Cambiar un color del dinero es ahora **una línea**.
+- **Movimientos**: el campo fecha del alta pasa a usar el mismo `DatePicker` con
+  calendario que el resto de la app (sin fechas futuras).
+
+**Por qué / decisiones**
+- Verde/rojo quedan **reservados a su significado** (ingreso/gasto), así que el
+  acento de marca es de otra familia (azul tinta) para no competir con ellos.
+- Centralizar los colores en tokens es a la vez **estilo propio y eliminación de
+  code smells** → encaja con el objetivo de la Fase 6.
+- **Proceso**: se prototiparon varias direcciones en ramas (`style/direccion-*`) y
+  una rama `demo` con **selector de estilo en caliente** para compararlas con
+  usuarios antes de decidir.
+
 ---
 
 ## Vista transversal por áreas
@@ -500,10 +529,16 @@ Resumen acumulado; se amplía en cada fase.
 - Gates en CI: ruff, mypy, eslint, tsc, build.
 
 ### Diseño / UX
+- **Identidad propia**: tipografía **Archivo** autohospedada + `tabular-nums` en
+  los importes; paleta blanco cálido/tinta con **acento azul tinta**; esquinas
+  rectas. Colores del dinero como **tokens semánticos** (`--income`, `--expense`,
+  `--invest`, `--bucket-amber`), no hex sueltos.
 - **Tema claro/oscuro** con toggle, persistencia (localStorage) y respeto de la
   preferencia del sistema; sin parpadeo al cargar.
+- **Barra superior global** (logo → Inicio, menú, perfil con submenú) constante en
+  las páginas autenticadas.
 - Componentes shadcn/ui (button, input, label, card, dialog, select, table,
-  popover, calendar).
+  popover, calendar) sobre los tokens propios.
 - Flujo de auth con rutas protegidas, medidor de fuerza y checklist en vivo.
 - Pantalla de movimientos con tabla, alta/edición en diálogo y borrado con
   confirmación.
