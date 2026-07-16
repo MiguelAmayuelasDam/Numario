@@ -1,6 +1,15 @@
-"""Tests de los endpoints de salud (/health y /ping)."""
+"""Tests de los endpoints de infraestructura (/, /health y /ping)."""
 
 from fastapi.testclient import TestClient
+
+
+def test_root_presents_the_api(client: TestClient) -> None:
+    """La raíz no es un 404: orienta a quien abre la URL del servicio a pelo."""
+    response = client.get("/")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["name"] == "Numario API"
+    assert body["docs"] == "/docs"
 
 
 def test_ping_ok_and_does_not_touch_db(client: TestClient) -> None:

@@ -48,6 +48,35 @@ Estado por categoría: ✅ cubierto · 🟡 parcial · ⏳ pendiente.
   `Strict-Transport-Security`.
 - Rate limit **relajado solo en el entorno Docker/E2E**; en producción se fija por
   entorno.
+- **Guarda de arranque**: la aplicación **se niega a arrancar** si
+  `ENVIRONMENT=production` con el secreto JWT de desarrollo
+  (`_no_dev_secrets_in_production` en `app/core/config.py`). Un despliegue mal
+  configurado falla de forma ruidosa en vez de quedarse firmando tokens con un
+  secreto que está publicado en el repositorio.
+
+### Decisión consciente: `/docs` y `/openapi.json` son públicos
+
+La documentación interactiva (Swagger UI) **se deja accesible sin autenticación**
+en producción. Es *information disclosure* y conviene declararlo, no que parezca
+un descuido:
+
+- **Qué expone**: la forma de la API (rutas, esquemas, códigos de error). **No**
+  expone datos: todos los endpoints de dominio siguen exigiendo JWT
+  (`GET /api/v1/categories` sin token → `401`), y el aislamiento por usuario de
+  A01 sigue vigente.
+- **Por qué se acepta**: Numario es un **proyecto de portfolio y de defensa
+  académica**; que el corrector pueda explorar el contrato de la API sin
+  credenciales es parte del objetivo del proyecto. El valor de la transparencia
+  supera aquí al de la ocultación.
+- **Por qué no es "seguridad" perderla**: ocultar `/docs` sería *security through
+  obscurity*. La API no está protegida porque su forma sea secreta, sino por
+  autenticación, autorización y rate limiting.
+- **Cuándo habría que cerrarlo**: si la aplicación pasara a un uso real con datos
+  de terceros. La mitigación es de una línea: `FastAPI(docs_url=None,
+  redoc_url=None, openapi_url=None)` cuando `settings.environment == "production"`.
+
+> Endpoint raíz `GET /` : devuelve solo nombre, versión y enlaces a `/docs` y
+> `/health`. No revela nada que `/docs` no revele ya.
 
 ## A06 — Vulnerable and Outdated Components ✅
 - **Escaneo de dependencias en CI**: `pip-audit` (Python) y `npm audit`
