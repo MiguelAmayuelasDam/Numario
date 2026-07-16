@@ -299,17 +299,37 @@ Estas reglas deben respetarse siempre al escribir código:
 
 ## 9. Documentación de referencia
 
-- `docs/glosario-funcionalidades.md` — **documento vivo**: qué se ha hecho en
-  cada fase y por qué (ver tarea permanente en §8)
-- `docs/comandos.md` — **runbook**: comandos para Docker, tests, migraciones, E2E
-- `docs/analysis/01-personas.md` — personas de usuario
-- `docs/analysis/02-user-stories.md` — user stories + priorización MoSCoW
-- `docs/analysis/03-requisitos.md` — requisitos funcionales y no funcionales
-- `docs/architecture/01-modelo-datos.md` — modelo entidad-relación
-- `docs/architecture/02-contrato-api.md` — contrato de la API REST
-- `docs/decisions/0001-stack-tecnologico.md` — ADR del stack
-- `docs/security/01-owasp-autenticacion.md` — controles de seguridad de auth
-- `docs/security/02-owasp-top-10.md` — mapeo OWASP Top 10 (mitigaciones + huecos)
+> **Este es el índice único de la documentación.** El `README.md` **no** lo
+> duplica: allí solo va lo que pide la entrega del TFM (descripción, stack,
+> instalación, estructura, funcionalidades y usuario de prueba). Si añades un
+> documento a `docs/`, enlázalo **aquí**.
+>
+> **No en el repo:** `docs/presentacion/` (guiones de las slides y del vídeo)
+> está en `.gitignore` a propósito — son notas de defensa, no documentación del
+> producto. Existen solo en el disco del autor; no los enlaces desde aquí.
+
+**Documentos vivos** (ver tarea permanente en §8)
+- [`docs/glosario-funcionalidades.md`](docs/glosario-funcionalidades.md) — qué se
+  ha hecho en cada fase y **por qué** + vista transversal por áreas
+- [`docs/comandos.md`](docs/comandos.md) — **runbook**: Docker, tests, cobertura,
+  migraciones, E2E, seguridad y seed de demostración
+
+**Análisis** (Fase 0)
+- [`docs/analysis/01-personas.md`](docs/analysis/01-personas.md) — personas de usuario
+- [`docs/analysis/02-user-stories.md`](docs/analysis/02-user-stories.md) — user stories + priorización MoSCoW
+- [`docs/analysis/03-requisitos.md`](docs/analysis/03-requisitos.md) — requisitos funcionales y no funcionales
+
+**Arquitectura**
+- [`docs/architecture/01-modelo-datos.md`](docs/architecture/01-modelo-datos.md) — modelo entidad-relación
+- [`docs/architecture/02-contrato-api.md`](docs/architecture/02-contrato-api.md) — contrato de la API REST
+
+**Decisiones (ADR)**
+- [`docs/decisions/0001-stack-tecnologico.md`](docs/decisions/0001-stack-tecnologico.md) — por qué este stack
+
+**Seguridad**
+- [`docs/security/01-owasp-autenticacion.md`](docs/security/01-owasp-autenticacion.md) — controles de seguridad de auth
+- [`docs/security/02-owasp-top-10.md`](docs/security/02-owasp-top-10.md) — mapeo OWASP Top 10
+  (mitigaciones, huecos y decisiones conscientes: `/docs` público, guarda de arranque)
 
 ---
 

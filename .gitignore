@@ -66,3 +66,10 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# ─────────────────────────────
+# Documentación
+# ─────────────────────────────
+presentacion/
+guion-slides.md
+guion-video.md
