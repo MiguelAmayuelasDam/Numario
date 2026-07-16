@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CategoryOptions } from "@/components/CategoryOptions"
 import { ApiError, api, type Category, type Transaction } from "@/lib/api"
 
 const NO_CATEGORY = "none"
@@ -96,12 +97,7 @@ export function SplitTransaction({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NO_CATEGORY}>Sin categoría</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.emoji ? `${c.emoji} ` : ""}
-                    {c.name}
-                  </SelectItem>
-                ))}
+                <CategoryOptions categories={categories} />
               </SelectContent>
             </Select>
             <Input

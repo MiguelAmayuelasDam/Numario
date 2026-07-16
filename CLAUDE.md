@@ -325,6 +325,9 @@ Estas reglas deben respetarse siempre al escribir código:
 
 **Decisiones (ADR)**
 - [`docs/decisions/0001-stack-tecnologico.md`](docs/decisions/0001-stack-tecnologico.md) — por qué este stack
+- *(0002 reservado para el ADR de despliegue — bloque D de la Fase 7)*
+- [`docs/decisions/0003-cubos-por-usuario.md`](docs/decisions/0003-cubos-por-usuario.md) — el cubo
+  del 50-30-20 debe decidirlo el usuario: **aceptada, implementación aplazada** tras la entrega
 
 **Seguridad**
 - [`docs/security/01-owasp-autenticacion.md`](docs/security/01-owasp-autenticacion.md) — controles de seguridad de auth
