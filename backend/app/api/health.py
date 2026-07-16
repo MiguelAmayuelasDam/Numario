@@ -21,3 +21,15 @@ def health(db: Session = Depends(get_db)) -> dict[str, str]:
     except Exception:
         db_status = "error"
     return {"status": "ok", "db": db_status}
+
+
+@router.get("/ping")
+def ping() -> dict[str, str]:
+    """Liveness **sin tocar la base de datos**.
+
+    Es el endpoint para el health check de la plataforma y para los monitores de
+    uptime. Importante: si sondearan `/health` (que hace `SELECT 1`), mantendrían
+    la base de datos despierta 24/7 y agotarían las horas de cómputo del plan
+    gratuito de Neon. Para diagnóstico real (¿llega a la DB?), usa `/health`.
+    """
+    return {"status": "ok"}
