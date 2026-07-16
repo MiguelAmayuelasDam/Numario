@@ -11,6 +11,7 @@
 - [Requisitos](#requisitos)
 - [Stack completo con Docker](#stack-completo-con-docker)
 - [Base de datos y migraciones](#base-de-datos-y-migraciones)
+- [Datos de demostración (usuario `mouredev`)](#datos-de-demostración-usuario-mouredev)
 - [Backend: tests, lint y tipos](#backend-tests-lint-y-tipos)
 - [Frontend: tests, lint, tipos y build](#frontend-tests-lint-tipos-y-build)
 - [E2E (Playwright)](#e2e-playwright)
@@ -87,6 +88,35 @@ docker compose exec backend uv run --no-sync alembic upgrade head     # aplicar 
 docker compose exec backend uv run --no-sync alembic current          # revisión actual
 docker compose exec backend uv run --no-sync alembic downgrade -1     # deshacer una
 ```
+
+---
+
+## Datos de demostración (usuario `mouredev`)
+
+Siembra un usuario con un caso realista de dos años (2025 completo y 2026 hasta
+hoy) para poder enseñar la aplicación sin tener que meter datos a mano:
+
+```powershell
+docker compose exec backend uv run --no-sync python scripts/seed_demo.py
+docker compose exec backend uv run --no-sync python scripts/seed_demo.py --reset   # recrear
+```
+
+Credenciales: **mouredev@gmail.com** (o el nick `mouredev`) · `Ahorr0!Constante`.
+
+Los importes están elegidos para que se den **distintas casuísticas** y la demo
+no salga entera en verde:
+
+| Caso                          | Dónde verlo                                     |
+| ----------------------------- | ----------------------------------------------- |
+| Cubo **Vida** en rojo/ámbar   | 02-2026 (avería del coche) · 05-2026 (dentista) |
+| Cubo **Mes** en rojo/ámbar    | 03-2026 (caprichos) · 06-2026 (viaje)           |
+| **Ingreso variable**          | Subida de sueldo en 04-2026; pagas extra en junio y diciembre |
+| Movimiento **sin categoría**  | "Cargo sin identificar" (20-06-2026)            |
+| **No computables**            | Aportes a inversión y traspaso a cuenta de ahorro |
+| **Previsto vs gastado**       | Supermercado, Restaurante y Gasolina del mes en curso |
+| **Comparación de años**       | 2025 completo (alquiler) frente a 2026 (hipoteca) |
+
+> El script no siembra días futuros: en el mes en curso solo llega hasta hoy.
 
 ---
 
