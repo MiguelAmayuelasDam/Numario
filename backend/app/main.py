@@ -48,3 +48,18 @@ app.add_middleware(
 # /health en la raíz (concern de infraestructura); el dominio va bajo /api/v1.
 app.include_router(health.router)
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.get("/", tags=["meta"])
+def root() -> dict[str, str]:
+    """Tarjeta de presentación de la API.
+
+    El dominio vive bajo `/api/v1`, así que sin esto la raíz devuelve un 404 a
+    quien abra la URL del servicio en el navegador: correcto, pero desconcertante.
+    """
+    return {
+        "name": app.title,
+        "version": app.version,
+        "docs": "/docs",
+        "health": "/health",
+    }
