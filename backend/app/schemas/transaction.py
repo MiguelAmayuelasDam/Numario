@@ -6,22 +6,16 @@ no pierden precisión). Siempre positivo; el signo lo da `type`.
 
 import uuid
 from datetime import date, datetime
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from app.schemas.category import CategoryRead
-from app.schemas.common import MAX_AMOUNT
+from app.schemas.common import MAX_AMOUNT, quantize_money
 
 # income = ingreso · expense = gasto · transfer = no computable (traspaso).
 TransactionType = Literal["income", "expense", "transfer"]
-
-_CENTS = Decimal("0.01")
-
-
-def _quantize(value: Decimal) -> Decimal:
-    return value.quantize(_CENTS, rounding=ROUND_HALF_UP)
 
 
 class TransactionCreate(BaseModel):
@@ -34,7 +28,7 @@ class TransactionCreate(BaseModel):
     @field_validator("amount")
     @classmethod
     def _quantize_amount(cls, value: Decimal) -> Decimal:
-        return _quantize(value)
+        return quantize_money(value)
 
 
 class TransactionUpdate(BaseModel):
@@ -49,7 +43,7 @@ class TransactionUpdate(BaseModel):
     @field_validator("amount")
     @classmethod
     def _quantize_amount(cls, value: Decimal | None) -> Decimal | None:
-        return _quantize(value) if value is not None else None
+        return quantize_money(value) if value is not None else None
 
 
 class TransactionSplitPart(BaseModel):
@@ -59,7 +53,7 @@ class TransactionSplitPart(BaseModel):
     @field_validator("amount")
     @classmethod
     def _quantize_amount(cls, value: Decimal) -> Decimal:
-        return _quantize(value)
+        return quantize_money(value)
 
 
 class TransactionSplitRequest(BaseModel):
@@ -82,4 +76,4 @@ class TransactionRead(BaseModel):
 
     @field_serializer("amount")
     def _serialize_amount(self, value: Decimal) -> str:
-        return f"{_quantize(value):.2f}"
+        return f"{quantize_money(value):.2f}"

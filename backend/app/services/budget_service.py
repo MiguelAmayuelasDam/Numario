@@ -39,6 +39,15 @@ def get_or_default(db: Session, user: User) -> Budget:
     )
 
 
+def _get_or_create_budget(db: Session, user: User) -> Budget:
+    """Presupuesto persistido del usuario; lo crea (sin commit) si aún no existe."""
+    budget = get_budget(db, user)
+    if budget is None:
+        budget = Budget(user_id=user.id)
+        db.add(budget)
+    return budget
+
+
 def _default_income(db: Session, user: User) -> Decimal:
     budget = get_budget(db, user)
     return budget.monthly_income if budget is not None else DEFAULT_INCOME
@@ -88,10 +97,7 @@ def upsert_budget(
     monthly_income: Decimal | None = None,
 ) -> Budget:
     """Actualiza los porcentajes (siempre) y el ingreso habitual (solo si se da)."""
-    budget = get_budget(db, user)
-    if budget is None:
-        budget = Budget(user_id=user.id)
-        db.add(budget)
+    budget = _get_or_create_budget(db, user)
     budget.living_pct = living_pct
     budget.monthly_pct = monthly_pct
     budget.investment_pct = investment_pct
@@ -104,20 +110,14 @@ def upsert_budget(
 
 def set_emergency_months(db: Session, user: User, months: int) -> None:
     """Fija los meses objetivo del colchón (crea el presupuesto si no existe)."""
-    budget = get_budget(db, user)
-    if budget is None:
-        budget = Budget(user_id=user.id)
-        db.add(budget)
+    budget = _get_or_create_budget(db, user)
     budget.emergency_fund_months = months
     db.commit()
 
 
 def set_emergency_monthly_need(db: Session, user: User, amount: Decimal) -> None:
     """Fija el gasto mensual de referencia del colchón (crea el presupuesto si no existe)."""
-    budget = get_budget(db, user)
-    if budget is None:
-        budget = Budget(user_id=user.id)
-        db.add(budget)
+    budget = _get_or_create_budget(db, user)
     budget.emergency_monthly_need = amount
     db.commit()
 

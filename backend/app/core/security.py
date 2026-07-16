@@ -39,7 +39,7 @@ def verify_password_dummy() -> None:
     """Verifica contra un hash señuelo para igualar el coste temporal."""
     try:
         _password_hash.verify("dummy", _DUMMY_HASH)
-    except Exception:
+    except Exception:  # nosec B110 - mitigación de timing: el resultado se ignora a propósito
         pass
 
 

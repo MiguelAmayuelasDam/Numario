@@ -1,6 +1,8 @@
 """Punto de entrada de la API FastAPI."""
 
-from fastapi import FastAPI
+from collections.abc import Awaitable, Callable
+
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -11,6 +13,24 @@ from app.core.config import settings
 from app.core.rate_limit import limiter
 
 app = FastAPI(title="Numario API", version="0.1.0")
+
+# Cabeceras de seguridad básicas (OWASP A05 — Security Misconfiguration).
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+}
+
+
+@app.middleware("http")
+async def _security_headers(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    response = await call_next(request)
+    for name, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    return response
 
 # Rate limiting (slowapi): estado en la app + handler 429.
 app.state.limiter = limiter

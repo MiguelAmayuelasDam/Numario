@@ -49,7 +49,9 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> User:
 
 
 @router.post("/login", response_model=TokenPair)
-@limiter.limit(settings.rate_limit_login)
+# Límite leído de forma dinámica: así el entorno lo configura (relajado en dev/E2E)
+# y los tests pueden fijar su propio umbral sin depender del valor ambiental.
+@limiter.limit(lambda: settings.rate_limit_login)
 def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)) -> TokenPair:
     user = authenticate_user(db, identifier=payload.identifier, password=payload.password)
     if user is None:

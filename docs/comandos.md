@@ -129,6 +129,15 @@ uv run mypy app
 uv run pytest
 ```
 
+### Cobertura y seguridad (Fase 6)
+```bash
+# Cobertura (gate: fail_under=80 en pyproject.toml)
+docker compose exec backend uv run --no-sync pytest --cov
+# Escaneo de seguridad
+docker compose exec backend uv run --no-sync bandit -r app      # estático
+docker compose exec backend uv run --no-sync pip-audit          # CVEs de deps
+```
+
 ---
 
 ## Frontend: tests, lint, tipos y build
@@ -140,7 +149,9 @@ npm install          # solo la primera vez o al cambiar dependencias
 npm run lint         # ESLint
 npm run typecheck    # tsc --noEmit
 npm run test         # Vitest (una pasada)
+npm run test:coverage # Vitest con cobertura (gates en vite.config.ts)
 npm run test:watch   # Vitest en modo watch
+npm audit --audit-level=high  # CVEs de dependencias (Fase 6)
 npm run build        # tsc -b + vite build (producción)
 npm run dev          # servidor de desarrollo (si no usas Docker)
 ```

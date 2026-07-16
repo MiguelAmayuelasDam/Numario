@@ -1,4 +1,4 @@
-"""Tests de las primitivas de seguridad (hash + JWT)."""
+"""Tests de las primitivas de seguridad (hash + JWT) y cabeceras HTTP."""
 
 import time
 
@@ -6,6 +6,14 @@ import jwt
 import pytest
 from app.core import security
 from app.core.config import settings
+from fastapi.testclient import TestClient
+
+
+def test_security_headers_present(client: TestClient) -> None:
+    response = client.get("/health")
+    assert response.headers.get("X-Content-Type-Options") == "nosniff"
+    assert response.headers.get("X-Frame-Options") == "DENY"
+    assert response.headers.get("Referrer-Policy") == "no-referrer"
 
 
 def test_hash_and_verify_password() -> None:

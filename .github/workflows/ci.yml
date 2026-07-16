@@ -42,8 +42,8 @@ jobs:
         run: uv run mypy app
       - name: Alembic (migraciones)
         run: uv run alembic upgrade head
-      - name: Pytest
-        run: uv run pytest
+      - name: Pytest (con cobertura)
+        run: uv run pytest --cov
 
   frontend:
     name: Frontend (lint + tests)
@@ -65,8 +65,8 @@ jobs:
         run: npm run lint
       - name: Type check
         run: npm run typecheck
-      - name: Vitest
-        run: npm run test
+      - name: Vitest (con cobertura)
+        run: npm run test:coverage
       - name: Build
         run: npm run build
 
@@ -109,3 +109,34 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down -v
+
+  security:
+    name: Security (bandit + pip-audit + npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install backend deps
+        working-directory: backend
+        run: uv sync --frozen
+      - name: Bandit (análisis estático del backend)
+        working-directory: backend
+        run: uv run bandit -r app
+      - name: pip-audit (CVEs de dependencias Python)
+        working-directory: backend
+        run: uv run pip-audit
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+      - name: npm audit (CVEs de dependencias del frontend)
+        working-directory: frontend
+        run: npm audit --audit-level=high

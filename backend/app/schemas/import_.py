@@ -2,14 +2,13 @@
 
 import uuid
 from datetime import date
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from app.schemas.category import CategoryRead
+from app.schemas.common import MAX_AMOUNT, quantize_money
 from app.schemas.transaction import TransactionType
-
-_CENTS = Decimal("0.01")
 
 
 class PreviewRow(BaseModel):
@@ -24,7 +23,7 @@ class PreviewRow(BaseModel):
 
     @field_serializer("amount")
     def _serialize_amount(self, value: Decimal) -> str:
-        return f"{value.quantize(_CENTS, rounding=ROUND_HALF_UP):.2f}"
+        return f"{quantize_money(value):.2f}"
 
 
 class ImportSummary(BaseModel):
@@ -42,7 +41,7 @@ class PreviewResponse(BaseModel):
 
 
 class ConfirmItem(BaseModel):
-    amount: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    amount: Decimal = Field(gt=0, le=MAX_AMOUNT, max_digits=12, decimal_places=2)
     type: TransactionType
     concept: str = Field(min_length=1, max_length=255)
     occurred_on: date
@@ -51,7 +50,7 @@ class ConfirmItem(BaseModel):
     @field_validator("amount")
     @classmethod
     def _quantize(cls, value: Decimal) -> Decimal:
-        return value.quantize(_CENTS, rounding=ROUND_HALF_UP)
+        return quantize_money(value)
 
 
 class ConfirmRequest(BaseModel):

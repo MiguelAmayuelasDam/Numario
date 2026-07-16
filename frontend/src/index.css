@@ -2,54 +2,76 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── Identidad de Numario: tipografía Archivo (grotesque, cifras marcadas) con
+   la paleta "Boutique": blanco cálido + tinta y acento azul tinta con
+   cuentagotas. Esquinas rectas. ── */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  --radius: 0.35rem;
+
+  --background: #fcfbf9; /* blanco cálido */
+  --foreground: #1a1a17; /* tinta */
+  --card: #ffffff;
+  --card-foreground: #1a1a17;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a17;
+  --primary: #26407e; /* azul tinta */
+  --primary-foreground: #fcfbf9;
+  --secondary: #eeece6;
+  --secondary-foreground: #26251f;
+  --muted: #eeece6;
+  --muted-foreground: #6e6a62;
+  --accent: #efece5;
+  --accent-foreground: #1a1a17;
+  --destructive: #cf4a44;
+  --border: #e8e5de;
+  --input: #e8e5de;
+  --ring: #26407e;
+
+  /* Colores semánticos del dinero (nunca decorativos). */
+  --income: #1a8a50; /* verde ingresos */
+  --expense: #cf4a44; /* rojo gastos */
+  --invest: #2f6fae; /* azul inversión */
+  --bucket-amber: #d6900f; /* ámbar/dorado del cubo "Mes" */
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  /* Fondo elegido: #1e1e26. Las superficies suben en consecuencia para que las
+     tarjetas sigan destacando sobre el fondo (jerarquía de elevación). */
+  --background: #1e1e26;
+  --foreground: #ece9e3;
+  --card: #262630;
+  --card-foreground: #ece9e3;
+  --popover: #262630;
+  --popover-foreground: #ece9e3;
+  --primary: #8ea6e8; /* azul tinta aclarado para fondo oscuro */
+  --primary-foreground: #1e1e26;
+  --secondary: #2f2f3a;
+  --secondary-foreground: #ece9e3;
+  --muted: #2f2f3a;
+  --muted-foreground: #a3a1ac;
+  --accent: #2f2f3a;
+  --accent-foreground: #ece9e3;
+  --destructive: #e0706a;
+  --border: #3a3a46;
+  --input: #42424f;
+  --ring: #8ea6e8;
+
+  --income: #4fb87e;
+  --expense: #e0706a;
+  --invest: #7aa6e6;
+  --bucket-amber: #d9a648;
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Tipografía: Archivo como sans de interfaz (voz display). */
+  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -68,6 +90,12 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Semánticos del dinero, disponibles como utilidades (text-income, bg-income…). */
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-invest: var(--invest);
+  --color-bucket-amber: var(--bucket-amber);
 }
 
 @layer base {
@@ -78,5 +106,13 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    /* Cifras alineadas en toda la app (finanzas = comparar de un vistazo). */
+    font-variant-numeric: tabular-nums;
+  }
+  /* Titulares y grandes cifras: display marcada. */
+  h1,
+  h2 {
+    letter-spacing: -0.02em;
   }
 }

@@ -6,16 +6,15 @@ El progreso es la suma de las aportaciones registradas.
 """
 
 import uuid
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.emergency_fund_contribution import EmergencyFundContribution as Contribution
 from app.models.user import User
+from app.schemas.common import quantize_money
 from app.services import budget_service
-
-_CENTS = Decimal("0.01")
 
 
 def list_contributions(db: Session, user: User) -> list[Contribution]:
@@ -65,7 +64,7 @@ def summary(db: Session, user: User) -> dict:
         else budget.monthly_income
     )
     months = budget.emergency_fund_months
-    target = (monthly_need * months).quantize(_CENTS, rounding=ROUND_HALF_UP)
+    target = quantize_money(monthly_need * months)
     saved = total_saved(db, user)
     remaining = target - saved
     if remaining < 0:

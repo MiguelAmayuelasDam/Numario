@@ -14,9 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ApiError, api, type EmergencyFund } from "@/lib/api"
 import { formatMoney, formatDateHeader, todayISO } from "@/lib/format"
-
-const MAX_AMOUNT = 9_999_999
-const withinCap = (v: string) => v === "" || Number(v) <= MAX_AMOUNT
+import { MAX_AMOUNT, withinCap } from "@/lib/money"
 
 function AddContributionDialog({
   open,
@@ -169,13 +167,13 @@ export default function EmergencyFundPage() {
           {/* Barra de progreso + lo que falta */}
           <div className="mb-2 h-4 overflow-hidden rounded-full bg-muted">
             <div
-              className={`h-full rounded-full ${reached ? "bg-green-500" : "bg-blue-500"}`}
+              className={`h-full rounded-full ${reached ? "bg-income" : "bg-invest"}`}
               style={{ width: `${pct}%` }}
             />
           </div>
           <p className="mb-6 text-center text-sm">
             {reached ? (
-              <span className="font-medium text-green-600">
+              <span className="font-medium text-income">
                 ¡Objetivo alcanzado! Tienes tu colchón completo.
               </span>
             ) : (
@@ -248,7 +246,7 @@ export default function EmergencyFundPage() {
                     {formatDateHeader(c.occurred_on)}
                   </span>
                   <span className="flex items-center gap-3">
-                    <span className="font-semibold text-green-600">+{formatMoney(c.amount)}</span>
+                    <span className="font-semibold text-income">+{formatMoney(c.amount)}</span>
                     <button
                       type="button"
                       aria-label="Borrar aportación"

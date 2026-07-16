@@ -2,16 +2,27 @@ import type { Bucket, Transaction, TransactionType } from "@/lib/api"
 
 // Color y etiqueta por cubo 50-30-20 (para el punto de color de cada categoría).
 export const BUCKET_META: Record<Bucket, { label: string; dot: string }> = {
-  living: { label: "Vida (50%)", dot: "bg-green-500" },
-  monthly: { label: "Mes (30%)", dot: "bg-amber-500" },
-  investment: { label: "Inversión (20%)", dot: "bg-blue-500" },
-  income: { label: "Ingresos", dot: "bg-violet-500" },
+  living: { label: "Vida (50%)", dot: "bg-income" },
+  monthly: { label: "Mes (30%)", dot: "bg-bucket-amber" },
+  investment: { label: "Inversión (20%)", dot: "bg-invest" },
+  income: { label: "Ingresos", dot: "bg-primary" },
   transfer: { label: "No computable", dot: "bg-gray-400" },
 }
 
 // Fecha de hoy en formato ISO (YYYY-MM-DD), para limitar los selectores de fecha.
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+// Días transcurridos del periodo [from, to] hasta hoy (mínimo 1). Sirve para
+// medias por día y proyecciones (no cuenta días futuros del periodo).
+export function daysElapsed(from: string, to: string): number {
+  const f = new Date(`${from}T00:00:00`)
+  const t = new Date(`${to}T00:00:00`)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const end = today < t ? today : t
+  return Math.max(1, Math.floor((end.getTime() - f.getTime()) / 86_400_000) + 1)
 }
 
 const moneyFmt = new Intl.NumberFormat("es-ES", {
@@ -37,7 +48,7 @@ export function formatSignedAmount(t: Transaction): string {
 }
 
 export function amountClass(type: TransactionType): string {
-  if (type === "income") return "text-green-600"
+  if (type === "income") return "text-income"
   if (type === "transfer") return "text-muted-foreground"
   return "text-foreground"
 }

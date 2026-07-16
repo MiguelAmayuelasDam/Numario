@@ -7,7 +7,7 @@ en ingresos, gastos, neto ni en los cubos 50-30-20.
 import uuid
 from calendar import monthrange
 from datetime import date
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -22,9 +22,9 @@ from app.schemas.analytics import (
     SeriesPoint,
     Summary,
 )
+from app.schemas.common import quantize_money
 from app.services import budget_service, forecast_service
 
-_CENTS = Decimal("0.01")
 # Categorías comunes por cubo que se ofrecen para previsión (mes en curso) aunque
 # aún no tengan gastos, para poder planificar a principio de mes.
 _COMMON_FORECAST = [
@@ -55,10 +55,6 @@ def _sum(db: Session, user: User, type_: str, d_from: date, d_to: date) -> Decim
         Transaction.occurred_on <= d_to,
     )
     return Decimal(db.scalar(stmt) or 0)
-
-
-def _quantize(value: Decimal) -> Decimal:
-    return value.quantize(_CENTS, rounding=ROUND_HALF_UP)
 
 
 def overview(
@@ -95,7 +91,7 @@ def overview(
     buckets: list[BucketStat] = []
     for bucket, blabel in _BUCKETS:
         spent = spent_by_bucket.get(bucket, Decimal(0))
-        bucket_budget = _quantize(income_base * pcts[bucket] / 100)
+        bucket_budget = quantize_money(income_base * pcts[bucket] / 100)
         pct = int(spent / bucket_budget * 100) if bucket_budget > 0 else 0
         status = "over" if pct > 100 else "warning" if pct >= 80 else "ok"
         buckets.append(

@@ -12,6 +12,9 @@ from app.services.category_service import CategoryNotFoundError
 
 router = APIRouter(prefix="/import", tags=["import"])
 
+# Los extractos bancarios son pequeños; acotar el tamaño evita agotar memoria (DoS).
+MAX_CSV_BYTES = 2 * 1024 * 1024  # 2 MiB
+
 
 @router.post("/preview", response_model=PreviewResponse)
 async def preview_import(
@@ -19,10 +22,17 @@ async def preview_import(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PreviewResponse:
-    raw = await file.read()
+    # Se lee como mucho el límite + 1 byte: así se detecta el exceso sin cargar en
+    # memoria un archivo enorme.
+    raw = await file.read(MAX_CSV_BYTES + 1)
     if not raw:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="El archivo está vacío"
+        )
+    if len(raw) > MAX_CSV_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="El archivo supera el tamaño máximo (2 MiB)",
         )
     return import_service.preview(db, user, raw)
 

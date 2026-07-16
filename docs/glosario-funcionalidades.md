@@ -442,6 +442,68 @@ el **dashboard de Inicio**.
 
 ---
 
+## Fase 6 — Endurecimiento, calidad y cobertura
+
+Bloque de calidad: refactor KISS, cobertura con gates, escaneo de seguridad en
+CI y revisión OWASP. Sin funcionalidad nueva de usuario; endurece lo existente.
+
+- **Refactor / code smells:** utilidades duplicadas centralizadas — backend
+  `quantize_money`/`CENTS` (antes en 5 módulos) y helper `_get_or_create_budget`;
+  frontend `lib/money.ts` (`MAX_AMOUNT`/`withinCap`) y `daysElapsed` en `lib/format`.
+  Corregido un hueco: la **importación CSV** ahora respeta el tope de importe.
+- **Cobertura con gates:** backend `pytest-cov` (`fail_under=80`, actual ~97%);
+  frontend `@vitest/coverage-v8` con umbrales (stmts/líneas 75, ramas 70, funcs 65;
+  actual ~85/79/72), excluyendo las primitivas shadcn. Ambos superan el hito ≥70%.
+- **Escaneo de seguridad en CI** (job `security`): **Bandit** (0 issues),
+  **pip-audit** y **npm audit** (0 vulnerabilidades). La única alerta de Bandit
+  (mitigación de timing) se documenta con `# nosec`.
+- **Endurecimientos:** cabeceras de seguridad (`X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, HSTS) y **límite de subida CSV** (2 MiB,
+  anti-DoS). Rate limit de login leído de forma **dinámica** (configurable por
+  entorno, testeable).
+- **OWASP Top 10** mapeado en `docs/security/02-owasp-top-10.md`.
+
+**Por qué / decisiones**
+- Centralizar en tokens/utilidades es a la vez estilo consistente y menos code smells.
+- Gates por debajo del valor actual: cortan regresiones sin ser frágiles.
+- Escaneo shift-left (regla §7.4): seguridad verificada en cada push.
+
+**Testing:** 123 backend · 45 frontend · **7 E2E** (auth, movimientos, importación,
+análisis, colchón, dashboard, perfil).
+
+**Estado:** ✅ Completada.
+
+### Identidad visual propia
+
+Hasta aquí la app vestía el **tema por defecto de shadcn** (gris pizarra): sin
+color de marca, sin voz tipográfica y con **colores del dinero hardcodeados e
+inconsistentes** (el verde de ingresos era `#00C950` en Análisis pero `#22c55e`
+en el Dashboard). Se le da identidad propia:
+
+- **Tipografía Archivo** (grotesque) autohospedada (`@fontsource`, sin depender
+  de CDN) y **`tabular-nums` en toda la app**: los importes alinean y se comparan
+  de un vistazo — en finanzas el dato *es* el producto.
+- **Paleta propia**: blanco cálido + tinta con **acento azul tinta usado con
+  cuentagotas** (botones, enlaces, foco), esquinas rectas. Claro y oscuro
+  diseñados por separado; en oscuro el fondo es `#1e1e26` y las superficies suben
+  en consecuencia (tarjetas `#262630`…) para conservar la jerarquía de elevación.
+- **Tokens semánticos del dinero**: `--income`, `--expense`, `--invest` y
+  `--bucket-amber` (utilidades `text-income`, `bg-income`…), que **sustituyen los
+  hex sueltos**. Cambiar un color del dinero es ahora **una línea**.
+- **Movimientos**: el campo fecha del alta pasa a usar el mismo `DatePicker` con
+  calendario que el resto de la app (sin fechas futuras).
+
+**Por qué / decisiones**
+- Verde/rojo quedan **reservados a su significado** (ingreso/gasto), así que el
+  acento de marca es de otra familia (azul tinta) para no competir con ellos.
+- Centralizar los colores en tokens es a la vez **estilo propio y eliminación de
+  code smells** → encaja con el objetivo de la Fase 6.
+- **Proceso**: se prototiparon varias direcciones en ramas (`style/direccion-*`) y
+  una rama `demo` con **selector de estilo en caliente** para compararlas con
+  usuarios antes de decidir.
+
+---
+
 ## Vista transversal por áreas
 
 Resumen acumulado; se amplía en cada fase.
@@ -467,10 +529,16 @@ Resumen acumulado; se amplía en cada fase.
 - Gates en CI: ruff, mypy, eslint, tsc, build.
 
 ### Diseño / UX
+- **Identidad propia**: tipografía **Archivo** autohospedada + `tabular-nums` en
+  los importes; paleta blanco cálido/tinta con **acento azul tinta**; esquinas
+  rectas. Colores del dinero como **tokens semánticos** (`--income`, `--expense`,
+  `--invest`, `--bucket-amber`), no hex sueltos.
 - **Tema claro/oscuro** con toggle, persistencia (localStorage) y respeto de la
   preferencia del sistema; sin parpadeo al cargar.
+- **Barra superior global** (logo → Inicio, menú, perfil con submenú) constante en
+  las páginas autenticadas.
 - Componentes shadcn/ui (button, input, label, card, dialog, select, table,
-  popover, calendar).
+  popover, calendar) sobre los tokens propios.
 - Flujo de auth con rutas protegidas, medidor de fuerza y checklist en vivo.
 - Pantalla de movimientos con tabla, alta/edición en diálogo y borrado con
   confirmación.

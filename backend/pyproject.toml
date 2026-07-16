@@ -24,6 +24,9 @@ dev = [
     "httpx>=0.28",
     "ruff>=0.9",
     "mypy>=1.14",
+    "pytest-cov>=7.1.0",
+    "bandit>=1.9.4",
+    "pip-audit>=2.10.1",
 ]
 
 [tool.ruff]
@@ -57,6 +60,15 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+show_missing = true
+# Gate de calidad (Fase 6): la lógica de negocio está ~97%; 80 deja margen pero
+# corta regresiones grandes. Requisito del hito: ≥70%.
+fail_under = 80
 
 # uv trata el proyecto como una aplicación (no como paquete instalable).
 [tool.uv]

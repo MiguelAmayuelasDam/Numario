@@ -18,6 +18,15 @@ def test_preview_requires_auth(client: TestClient) -> None:
     assert response.status_code in {401, 403}
 
 
+def test_preview_rejects_oversized_file(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    # Más de 2 MiB → 413 (protección contra agotar memoria).
+    big = b"x" * (2 * 1024 * 1024 + 10)
+    response = _upload(client, auth_headers, big)
+    assert response.status_code == 413
+
+
 def test_preview_classifies_rows(
     client: TestClient, auth_headers: dict[str, str], seed_categories: None
 ) -> None:

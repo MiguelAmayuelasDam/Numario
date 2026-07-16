@@ -29,5 +29,19 @@ export default defineConfig({
     css: true,
     // Los tests E2E de Playwright viven en e2e/ y se corren con `npm run test:e2e`.
     exclude: ["**/node_modules/**", "**/dist/**", "e2e/**"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/components/ui/**", // primitivas shadcn (código vendido)
+        "src/**/*.test.{ts,tsx}",
+        "src/setupTests.ts",
+        "src/main.tsx",
+        "src/vite-env.d.ts",
+        "src/**/*.d.ts",
+      ],
+      // Gate de calidad (Fase 6). Requisito del hito: ≥70% en lógica de negocio.
+      thresholds: { statements: 75, branches: 70, functions: 65, lines: 75 },
+    },
   },
 })
