@@ -10,7 +10,18 @@ import {
   type SeriesPoint,
   type Transaction,
 } from "@/lib/api"
-import { amountClass, daysElapsed, formatMoney, signedAmount } from "@/lib/format"
+import {
+  type AmountSizes,
+  amountClass,
+  amountSizeClass,
+  daysElapsed,
+  formatMoney,
+  signedAmount,
+} from "@/lib/format"
+
+// Hueco del centro del donut: 172 px. Cae hasta text-xl para que
+// "9.999.999,00 €" quepa sin tocar el anillo.
+const DONUT_SIZES: AmountSizes = ["text-3xl", "text-2xl", "text-xl"]
 import { cn } from "@/lib/utils"
 
 // Donut del mes: el aro es tu INGRESO; el rojo es lo GASTADO y el verde lo que
@@ -69,14 +80,23 @@ function NetDonut({
           )}
         </g>
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      {/* El texto vive dentro del hueco del anillo (el diámetro interior), no de
+          la caja completa: si no, una cifra larga se monta encima del donut. */}
+      <div
+        className="absolute inset-0 m-auto flex flex-col items-center justify-center"
+        style={{ width: r * 2 - stroke, height: r * 2 - stroke }}
+      >
         <span
-          className={cn("whitespace-nowrap text-3xl font-bold", negative && "text-expense")}
+          className={cn(
+            "w-full truncate text-center font-bold",
+            amountSizeClass(formatMoney(net), DONUT_SIZES),
+            negative && "text-expense",
+          )}
           data-testid="dash-net"
         >
           {formatMoney(net)}
         </span>
-        <span className="px-4 text-center text-xs text-muted-foreground">Neto ({label})</span>
+        <span className="text-center text-xs text-muted-foreground">Neto ({label})</span>
       </div>
       {/* Popup con el detalle al pasar el ratón */}
       <div className="pointer-events-none absolute left-1/2 top-0 z-10 hidden -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border bg-popover px-3 py-1.5 text-xs shadow-md group-hover:block">

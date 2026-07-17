@@ -22,7 +22,17 @@ import {
   type Granularity,
   type SeriesPoint,
 } from "@/lib/api"
-import { BUCKET_META, daysElapsed, formatMoney } from "@/lib/format"
+import {
+  type AmountSizes,
+  BUCKET_META,
+  amountSizeClass,
+  daysElapsed,
+  formatMoney,
+} from "@/lib/format"
+
+// Columna de ~277 px (un tercio de max-w-4xl). Cae hasta text-2xl para que
+// "9.999.999,00 €" no se toque con la cifra de al lado.
+const HERO_SIZES: AmountSizes = ["text-4xl", "text-3xl", "text-2xl"]
 import { MAX_AMOUNT, withinCap } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
@@ -356,7 +366,14 @@ export default function Analytics() {
           {/* Ingresos / Gastos / Neto */}
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-4xl font-bold" style={{ color: "var(--foreground)" }} data-testid="income">
+              <p
+                className={cn(
+                  "font-bold tracking-tight",
+                  amountSizeClass(formatMoney(overview.summary.income), HERO_SIZES),
+                )}
+                style={{ color: "var(--foreground)" }}
+                data-testid="income"
+              >
                 {formatMoney(overview.summary.income)}
               </p>
               <p className="text-sm font-medium" style={{ color: "var(--income)" }}>
@@ -364,7 +381,14 @@ export default function Analytics() {
               </p>
             </div>
             <div>
-              <p className="text-4xl font-bold" style={{ color: "var(--foreground)" }} data-testid="expense">
+              <p
+                className={cn(
+                  "font-bold tracking-tight",
+                  amountSizeClass(formatMoney(overview.summary.expense), HERO_SIZES),
+                )}
+                style={{ color: "var(--foreground)" }}
+                data-testid="expense"
+              >
                 {formatMoney(overview.summary.expense)}
               </p>
               <p className="text-sm">
@@ -383,7 +407,14 @@ export default function Analytics() {
               </p>
             </div>
             <div>
-              <p className="text-4xl font-bold" style={{ color: "var(--foreground)" }} data-testid="net">
+              <p
+                className={cn(
+                  "font-bold tracking-tight",
+                  amountSizeClass(formatMoney(overview.summary.net), HERO_SIZES),
+                )}
+                style={{ color: "var(--foreground)" }}
+                data-testid="net"
+              >
                 {formatMoney(overview.summary.net)}
               </p>
               <p className="text-sm text-muted-foreground">Neto ({overview.period_label})</p>
@@ -440,9 +471,9 @@ export default function Analytics() {
                 <div className="flex items-center gap-3 border-b pb-1 text-xs text-muted-foreground">
                   <span className="w-6" />
                   <span className="flex-1">Categoría</span>
-                  <span className="w-20 text-right">Gastado</span>
-                  <span className="w-24 text-right">Previsto</span>
-                  <span className="w-24 text-right">Balance</span>
+                  <span className="w-28 shrink-0 text-right">Gastado</span>
+                  <span className="w-24 shrink-0 text-right">Previsto</span>
+                  <span className="w-28 shrink-0 text-right">Balance</span>
                 </div>
                 <ul className="divide-y">
                   {overview.categories.map((c) => {
@@ -453,8 +484,10 @@ export default function Analytics() {
                       <li key={id ?? "none"} className="flex items-center gap-3 py-3">
                         <span className="w-6 text-lg">{c.emoji ?? "🏷️"}</span>
                         <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                        <span className="w-20 text-right font-semibold">{formatMoney(c.spent)}</span>
-                        <span className="w-24">
+                        <span className="w-28 shrink-0 whitespace-nowrap text-right font-semibold">
+                          {formatMoney(c.spent)}
+                        </span>
+                        <span className="w-24 shrink-0">
                           {id ? (
                             <span className="flex items-center rounded-md border px-2 py-1">
                               <input
@@ -475,7 +508,7 @@ export default function Analytics() {
                             </span>
                           ) : null}
                         </span>
-                        <span className="w-24 text-right text-xs leading-tight">
+                        <span className="w-28 shrink-0 whitespace-nowrap text-right text-xs leading-tight">
                           {overage > 0 ? (
                             <span style={{ color: "var(--expense)" }}>
                               {formatMoney(overage)}

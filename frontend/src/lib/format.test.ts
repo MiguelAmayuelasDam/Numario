@@ -1,7 +1,32 @@
 import { describe, expect, it } from "vitest"
 
-import { BUCKET_ORDER, groupByBucket } from "@/lib/format"
+import { type AmountSizes, BUCKET_ORDER, amountSizeClass, groupByBucket } from "@/lib/format"
 import type { Bucket } from "@/lib/api"
+
+const SIZES: AmountSizes = ["grande", "medio", "pequeño"]
+
+describe("amountSizeClass", () => {
+  it("deja el tamaño grande para los importes del día a día", () => {
+    expect(amountSizeClass("0,00 €", SIZES)).toBe("grande")
+    expect(amountSizeClass("42,90 €", SIZES)).toBe("grande")
+    expect(amountSizeClass("1.234,56 €", SIZES)).toBe("grande")
+  })
+
+  it("baja un paso con los miles largos", () => {
+    expect(amountSizeClass("12.345,67 €", SIZES)).toBe("medio")
+    expect(amountSizeClass("123.456,78 €", SIZES)).toBe("medio")
+  })
+
+  it("baja al mínimo con los millones, que son los que desbordaban", () => {
+    expect(amountSizeClass("1.234.567,89 €", SIZES)).toBe("pequeño")
+    // El tope del validador (MAX_AMOUNT): el caso que se comía el donut.
+    expect(amountSizeClass("9.999.999,00 €", SIZES)).toBe("pequeño")
+  })
+
+  it("cuenta también el signo, que ocupa", () => {
+    expect(amountSizeClass("−9.999.999,00 €", SIZES)).toBe("pequeño")
+  })
+})
 
 const item = (name: string, bucket: Bucket) => ({ name, bucket })
 

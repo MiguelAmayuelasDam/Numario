@@ -25,6 +25,46 @@ export function groupByBucket<T extends { bucket: Bucket }>(items: T[]): [Bucket
   ]).filter(([, group]) => group.length > 0)
 }
 
+/**
+ * Escalera de tamaños para un importe destacado: de mayor a menor.
+ * Cada sitio define la suya según el hueco que tiene.
+ */
+export type AmountSizes = readonly [big: string, mid: string, small: string]
+
+/**
+ * Tamaño de fuente para un importe **ya formateado**, según lo largo que sea.
+ *
+ * Los importes llegan hasta `9.999.999,00 €` (14 caracteres) y a tamaño fijo no
+ * caben en su hueco: en el donut la cifra se comía el anillo, y en Análisis las
+ * tres cifras se tocaban entre sí.
+ *
+ * Se escala por **longitud del texto** y no con `clamp()` ni container queries
+ * porque lo que desborda no es el ancho del contenedor —que es fijo— sino el
+ * número de caracteres.
+ *
+ * Los cortes están **medidos** sobre Archivo bold con `tabular-nums` (todos los
+ * dígitos ocupan lo mismo), no estimados. Anchos en px:
+ *
+ * ```
+ *                    len   4xl   3xl   2xl    xl
+ *  1.234,56 €         10   174   145   116    97
+ *  123.456,78 €       12   216   180   144   120
+ *  9.999.999,00 €     14   246   205   164   137
+ *  −9.999.999,00 €    15   272   226   181   151
+ * ```
+ *
+ * Los huecos más estrechos que hay que respetar son 172 px (centro del donut) y
+ * ~181 px (columna de Análisis con la ventana en el mínimo de `sm:grid-cols-3`).
+ * De ahí los cortes en 10 y 12: con el corte en 13, un `123.456,78 €` a `3xl`
+ * (180 px) se comía la columna por los pelos.
+ */
+export function amountSizeClass(formatted: string, sizes: AmountSizes): string {
+  const len = formatted.length
+  if (len <= 10) return sizes[0] // "1.234,56 €"     — el día a día
+  if (len <= 12) return sizes[1] // "123.456,78 €"   — miles largos
+  return sizes[2] //               "9.999.999,00 €"  — millones (los que desbordaban)
+}
+
 // Fecha de hoy en formato ISO (YYYY-MM-DD), para limitar los selectores de fecha.
 export function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
