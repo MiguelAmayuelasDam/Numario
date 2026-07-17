@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CategoryOptions } from "@/components/CategoryOptions"
 import type { Category, Transaction, TransactionInput, TransactionType } from "@/lib/api"
 import { MAX_AMOUNT, withinCap } from "@/lib/money"
 
@@ -117,12 +118,7 @@ export function TransactionForm({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={NO_CATEGORY}>Sin categoría</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.emoji ? `${c.emoji} ` : ""}
-                {c.name}
-              </SelectItem>
-            ))}
+            <CategoryOptions categories={categories} />
           </SelectContent>
         </Select>
       </div>

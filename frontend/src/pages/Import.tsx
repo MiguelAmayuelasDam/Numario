@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CategoryOptions } from "@/components/CategoryOptions"
 import {
   Table,
   TableBody,
@@ -250,12 +251,7 @@ export default function Import() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={NO_CATEGORY}>Sin categoría</SelectItem>
-                        {categories.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.emoji ? `${c.emoji} ` : ""}
-                            {c.name}
-                          </SelectItem>
-                        ))}
+                        <CategoryOptions categories={categories} />
                       </SelectContent>
                     </Select>
                   </TableCell>

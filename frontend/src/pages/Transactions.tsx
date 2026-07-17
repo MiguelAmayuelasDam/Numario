@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CategoryOptions } from "@/components/CategoryOptions"
 import {
   ApiError,
   api,
@@ -220,12 +221,7 @@ export default function Transactions() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL_CATEGORIES}>Todas las categorías</SelectItem>
-              {categories.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.emoji ? `${c.emoji} ` : ""}
-                  {c.name}
-                </SelectItem>
-              ))}
+              <CategoryOptions categories={categories} />
             </SelectContent>
           </Select>
         </div>

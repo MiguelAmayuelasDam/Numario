@@ -1,12 +1,28 @@
 import type { Bucket, Transaction, TransactionType } from "@/lib/api"
 
 // Color y etiqueta por cubo 50-30-20 (para el punto de color de cada categoría).
-export const BUCKET_META: Record<Bucket, { label: string; dot: string }> = {
-  living: { label: "Vida (50%)", dot: "bg-income" },
-  monthly: { label: "Mes (30%)", dot: "bg-bucket-amber" },
-  investment: { label: "Inversión (20%)", dot: "bg-invest" },
-  income: { label: "Ingresos", dot: "bg-primary" },
-  transfer: { label: "No computable", dot: "bg-gray-400" },
+// `label` lleva el porcentaje por defecto y solo vale donde se explica la regla;
+// `short` es el nombre a secas, para cabeceras y sitios donde el porcentaje del
+// usuario puede no ser el de fábrica (son configurables).
+export const BUCKET_META: Record<Bucket, { label: string; short: string; dot: string }> = {
+  living: { label: "Vida (50%)", short: "Vida", dot: "bg-income" },
+  monthly: { label: "Mes (30%)", short: "Mes", dot: "bg-bucket-amber" },
+  investment: { label: "Inversión (20%)", short: "Inversión", dot: "bg-invest" },
+  income: { label: "Ingresos", short: "Ingresos", dot: "bg-primary" },
+  transfer: { label: "No computable", short: "No computable", dot: "bg-gray-400" },
+}
+
+// Orden en el que se presentan los cubos al usuario: primero los tres del
+// 50-30-20 (que es de lo que va la app) y después ingresos y no computables.
+// Alfabéticamente saldría "income, investment, living…", que no significa nada.
+export const BUCKET_ORDER: Bucket[] = ["living", "monthly", "investment", "income", "transfer"]
+
+/** Agrupa categorías por cubo, en el orden de `BUCKET_ORDER`, sin grupos vacíos. */
+export function groupByBucket<T extends { bucket: Bucket }>(items: T[]): [Bucket, T[]][] {
+  return BUCKET_ORDER.map((bucket): [Bucket, T[]] => [
+    bucket,
+    items.filter((item) => item.bucket === bucket),
+  ]).filter(([, group]) => group.length > 0)
 }
 
 // Fecha de hoy en formato ISO (YYYY-MM-DD), para limitar los selectores de fecha.

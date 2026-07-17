@@ -6,6 +6,21 @@ import { cn } from "@/lib/utils"
 
 const Select = SelectPrimitive.Root
 const SelectValue = SelectPrimitive.Value
+const SelectGroup = SelectPrimitive.Group
+
+// Cabecera de un grupo de opciones. No es seleccionable ni recibe foco: Radix la
+// anuncia como etiqueta del grupo a los lectores de pantalla.
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn("px-2 py-1.5 text-xs font-semibold", className)}
+    {...props}
+  />
+))
+SelectLabel.displayName = SelectPrimitive.Label.displayName
 
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
@@ -76,4 +91,12 @@ const SelectItem = React.forwardRef<
 ))
 SelectItem.displayName = SelectPrimitive.Item.displayName
 
-export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue }
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+}
