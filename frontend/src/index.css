@@ -44,11 +44,15 @@
   --bucket-amber: #d6900f; /* ámbar: estado "ojo" */
 
   /* 3 · identidad de los cubos. Evitan verde/ámbar/rojo a propósito: esos son
-     del semáforo, y un punto de identidad no debe parecer un veredicto. */
+     del semáforo, y un punto de identidad no debe parecer un veredicto. Se
+     evita también el rosa: aunque mide lejos del rojo (ΔE 29), junto a una
+     barra roja se lee como "familia del rojo" y confunde igual. */
   --bucket-living: #6d28d9; /* violeta: Vida */
-  --bucket-monthly: #db2777; /* rosa: Mes */
+  --bucket-monthly: #0891b2; /* cian: Mes */
   --invest: #2f6fae; /* azul: Inversión */
-  --bucket-transfer: #6e6a62; /* gris cálido: No computable (gris a propósito:
+  --bucket-income: #4a8fe8; /* azul claro: Ingresos. El más claro que aún pasa
+                               3:1 sobre el fondo; #60a5fa se quedaba en 2,46. */
+  --bucket-transfer: #8a867e; /* gris cálido: No computable (gris a propósito:
                                  significa "esto no cuenta") */
 }
 
@@ -81,12 +85,19 @@
   /* Identidad de cubo en oscuro. Los tonos van dentro de la banda de
      luminosidad OKLCH 0.48–0.67 que pide un fondo oscuro: los de antes estaban
      en 0.70–0.75 —demasiado claros y con poco croma— y por eso se camuflaban
-     con el fondo y entre ellos. El azul baja de #7aa6e6 porque era casi el
-     mismo color que --primary (#8ea6e8): ΔE 0,7 bajo protanopía. */
+     con el fondo y entre ellos (--primary #8ea6e8 e --invest #7aa6e6 estaban a
+     ΔE 0,7 bajo protanopía: el mismo color).
+
+     Inversión se queda en el azul profundo y Ingresos toma el azul claro: los
+     separa la luminosidad (0.531 vs 0.655) **dentro** de la banda. Subir los dos
+     los juntaba a ΔE 8,2; así quedan en 14,4. Todo azul más claro que #5b93d9
+     se sale de la banda por arriba y pierde croma — que es justo el defecto que
+     se venía a arreglar. */
   --bucket-living: #8b5cf6;
-  --bucket-monthly: #ec4899;
-  --invest: #5b93d9;
-  --bucket-transfer: #7d7a86;
+  --bucket-monthly: #0e9dbf;
+  --invest: #2f6fae;
+  --bucket-income: #5b93d9;
+  --bucket-transfer: #94919c;
 }
 
 @theme inline {
@@ -125,6 +136,7 @@
   --color-bucket-amber: var(--bucket-amber);
   --color-bucket-living: var(--bucket-living);
   --color-bucket-monthly: var(--bucket-monthly);
+  --color-bucket-income: var(--bucket-income);
   --color-bucket-transfer: var(--bucket-transfer);
 }
 

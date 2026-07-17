@@ -24,7 +24,7 @@ export function CategoryOptions({ categories }: CategoryOptionsProps) {
         <SelectGroup key={bucket}>
           <SelectLabel className="flex items-center gap-2 pt-3 text-muted-foreground">
             <span className={"size-2 shrink-0 rounded-full " + BUCKET_META[bucket].dot} />
-            {BUCKET_META[bucket].short}
+            {BUCKET_META[bucket].label}
             <span className="ml-1 h-px flex-1 bg-border" />
           </SelectLabel>
           {items.map((c) => (

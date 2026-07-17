@@ -5,19 +5,19 @@ import type { Bucket, Transaction, TransactionType } from "@/lib/api"
 // `short` es el nombre a secas, para cabeceras y sitios donde el porcentaje del
 // usuario puede no ser el de fábrica (son configurables).
 // El punto dice **cuál** es el cubo, nunca **qué tal** va: eso lo dice el
-// semáforo. Por eso ninguno de los tres cubos del 50-30-20 usa verde, ámbar ni
-// rojo, que son del estado. Antes Vida iba de verde (= "vas bien") y Mes de
-// ámbar (= "ojo"), así que en Análisis el punto y la barra decían lo mismo con
-// el mismo color; y en oscuro Ingresos (--primary) e Inversión eran el mismo
-// color para un protanope (ΔE 0,7). Tonos elegidos con validador, no a ojo.
-export const BUCKET_META: Record<Bucket, { label: string; short: string; dot: string }> = {
-  living: { label: "Vida (50%)", short: "Vida", dot: "bg-bucket-living" },
-  monthly: { label: "Mes (30%)", short: "Mes", dot: "bg-bucket-monthly" },
-  investment: { label: "Inversión (20%)", short: "Inversión", dot: "bg-invest" },
-  // Ingresos sí va de verde: no es un cubo del reparto, no compite con ningún
-  // semáforo, y es el mismo verde con el que se pinta el importe de un ingreso.
-  income: { label: "Ingresos", short: "Ingresos", dot: "bg-income" },
-  transfer: { label: "No computable", short: "No computable", dot: "bg-bucket-transfer" },
+// semáforo. Por eso ninguno usa verde, ámbar ni rojo, que son del estado. Antes
+// Vida iba de verde (= "vas bien") y Mes de ámbar (= "ojo"), así que en Análisis
+// el punto y la barra decían lo mismo con el mismo color. Tonos elegidos con el
+// validador de la skill `dataviz`, no a ojo (ver CLAUDE.md §7.8).
+//
+// Sin porcentaje en el nombre: eran configurables desde la Fase 5, así que
+// "Vida (50%)" mentía a quien usara 60/20/20.
+export const BUCKET_META: Record<Bucket, { label: string; dot: string }> = {
+  living: { label: "Vida", dot: "bg-bucket-living" },
+  monthly: { label: "Mes", dot: "bg-bucket-monthly" },
+  investment: { label: "Inversión", dot: "bg-invest" },
+  income: { label: "Ingresos", dot: "bg-bucket-income" },
+  transfer: { label: "No computable", dot: "bg-bucket-transfer" },
 }
 
 // Orden en el que se presentan los cubos al usuario: primero los tres del

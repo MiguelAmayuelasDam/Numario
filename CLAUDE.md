@@ -278,13 +278,17 @@ Estas reglas deben respetarse siempre al escribir código:
    | --- | --- | --- |
    | Tipo de movimiento | `--income` · `--expense` | pinta el importe en la lista |
    | Estado (semáforo) | `--income` · `--bucket-amber` · `--expense` | **reservados**: dicen *qué tal vas* |
-   | Identidad de cubo | `--bucket-living` · `--bucket-monthly` · `--invest` · `--bucket-transfer` | **categóricos**: dicen *cuál*, nunca *qué tal* |
+   | Identidad de cubo | `--bucket-living` · `--bucket-monthly` · `--invest` · `--bucket-income` · `--bucket-transfer` | **categóricos**: dicen *cuál*, nunca *qué tal* |
 
    **Verde, ámbar y rojo están reservados** al estado y al tipo de movimiento —
-   por eso el acento de marca es **azul tinta** y por eso los cubos del 50-30-20
-   van de **violeta (Vida)**, **rosa (Mes)** y **azul (Inversión)**: si Vida
-   fuera verde, su punto de identidad se leería como el veredicto "vas bien".
+   por eso el acento de marca es **azul tinta** y por eso los cubos van de
+   **violeta (Vida)**, **cian (Mes)**, **azul (Inversión)** y **azul claro
+   (Ingresos)**: si Vida fuera verde, su punto de identidad se leería como el
+   veredicto "vas bien". **El rosa también está descartado**: mide lejos del
+   rojo (ΔE 29) pero junto a una barra roja se lee como su familia.
    `--bucket-transfer` es gris **a propósito**: significa "esto no cuenta".
+   Las etiquetas **no llevan porcentaje** ("Vida", no "Vida (50%)"): son
+   configurables desde la Fase 5 y el número mentiría a quien use 60/20/20.
 
    **Los tonos categóricos no se eligen a ojo.** Salen del validador de la skill
    `dataviz` (`scripts/validate_palette.js`): banda de luminosidad OKLCH
