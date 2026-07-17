@@ -22,6 +22,7 @@ import {
   type Granularity,
   type SeriesPoint,
 } from "@/lib/api"
+import { Rule503020Hint } from "@/components/hints"
 import {
   type AmountSizes,
   BUCKET_META,
@@ -146,7 +147,10 @@ function BudgetDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ajustar presupuesto</DialogTitle>
+          <DialogTitle className="flex items-center gap-1.5">
+            Ajustar presupuesto
+            <Rule503020Hint />
+          </DialogTitle>
           <DialogDescription>
             {isMonth
               ? `Ingreso de ${periodLabel} y el reparto 50-30-20 (los porcentajes deben sumar 100).`
@@ -451,7 +455,10 @@ export default function Analytics() {
           {/* Cubos 50-30-20 */}
           <div className="mb-6">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-semibold">Reparto {allocLabel}</h2>
+              <h2 className="flex items-center gap-1.5 font-semibold">
+                Reparto {allocLabel}
+                <Rule503020Hint />
+              </h2>
               <Button size="sm" variant="outline" onClick={() => setBudgetOpen(true)}>
                 Ajustar presupuesto
               </Button>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Trash2 } from "lucide-react"
 
+import { EmergencyFundHint } from "@/components/hints"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import {
@@ -150,12 +151,33 @@ export default function EmergencyFundPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-4 sm:p-8">
-      <h1 className="mb-6 text-3xl font-bold">Colchón de emergencia</h1>
+      <h1 className="mb-6 flex items-center gap-2 text-3xl font-bold">
+        Colchón de emergencia
+        <EmergencyFundHint />
+      </h1>
 
       {!fund ? (
         <p className="py-8 text-center text-muted-foreground">Cargando…</p>
       ) : (
         <>
+          {/* Sin objetivo definido (usuario nuevo): el hueco de "0 € de 0 €" no
+              dice nada, así que se aprovecha para explicar qué es un colchón —
+              sin competir con ningún dato, porque todavía no lo hay. */}
+          {Number(fund.target) <= 0 ? (
+            <div
+              className="mb-6 space-y-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground"
+              data-testid="ef-empty"
+            >
+              <p className="font-medium text-foreground">Aún no tienes un colchón definido.</p>
+              <p>
+                Un colchón de emergencia es un ahorro para los imprevistos —una avería,
+                quedarte sin trabajo— que convierte un susto en una molestia en vez de en un
+                problema. Lo habitual es cubrir de 3 a 6 meses de tus gastos de vida.
+              </p>
+              <p>Di abajo cuánto necesitas para vivir al mes y empieza a sumar.</p>
+            </div>
+          ) : null}
+
           {/* Cantidad ahorrada en grande */}
           <div className="mb-2 text-center">
             <p className="text-5xl font-bold" data-testid="ef-saved">

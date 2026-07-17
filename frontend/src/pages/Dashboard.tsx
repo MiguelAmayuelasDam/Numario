@@ -10,6 +10,7 @@ import {
   type SeriesPoint,
   type Transaction,
 } from "@/lib/api"
+import { EmergencyFundHint, Rule503020Hint } from "@/components/hints"
 import {
   type AmountSizes,
   amountClass,
@@ -309,7 +310,10 @@ export default function Dashboard() {
         {/* Mensajes 50-30-20 (título dinámico según el reparto configurado) */}
         <section className="flex flex-col rounded-xl border p-4 shadow-md lg:col-span-2">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="font-semibold">Cómo llevas tu {allocLabel}</h2>
+            <h2 className="flex items-center gap-1.5 font-semibold">
+              Cómo llevas tu {allocLabel}
+              <Rule503020Hint />
+            </h2>
             <Link to="/analisis" className="text-sm text-primary hover:underline">
               Ver análisis
             </Link>
@@ -330,7 +334,10 @@ export default function Dashboard() {
         {/* Colchón de emergencia */}
         <section className="rounded-xl border p-4 shadow-md lg:col-span-1">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="font-semibold">Colchón de emergencia</h2>
+            <h2 className="flex items-center gap-1.5 font-semibold">
+              Colchón de emergencia
+              <EmergencyFundHint />
+            </h2>
             <Link to="/colchon" className="text-sm text-primary hover:underline">
               Ver detalle
             </Link>

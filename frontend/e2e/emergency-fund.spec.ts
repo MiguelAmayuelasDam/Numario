@@ -28,12 +28,18 @@ test("colchón: definir gasto mensual y añadir una aportación", async ({ page 
   // para que el valor tecleado no se resetee.
   await page.waitForLoadState("networkidle")
 
+  // Usuario nuevo sin objetivo: en vez del hueco "0 € de 0 €", la explicación.
+  await expect(page.getByTestId("ef-empty")).toBeVisible()
+
   // Gasto mensual 1000 × 6 meses (por defecto) → objetivo 6000.
   const need = page.getByLabel("Gasto mensual para vivir (€)")
   await need.fill("1000")
   await expect(need).toHaveValue("1000")
   await page.getByRole("button", { name: "Guardar" }).click()
   await expect(page.getByText(/6\.?000,00/).first()).toBeVisible()
+
+  // Con objetivo definido, la explicación del estado vacío ya no estorba.
+  await expect(page.getByTestId("ef-empty")).toBeHidden()
 
   // Aportación de 500.
   await page.getByRole("button", { name: "Añadir monto" }).click()
