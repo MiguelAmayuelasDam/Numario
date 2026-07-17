@@ -282,11 +282,17 @@ Estas reglas deben respetarse siempre al escribir código:
 
    **Verde, ámbar y rojo están reservados** al estado y al tipo de movimiento —
    por eso el acento de marca es **azul tinta** y por eso los cubos van de
-   **violeta (Vida)**, **cian (Mes)**, **azul (Inversión)** y **azul claro
+   **violeta (Vida)**, **cian (Mes)**, **azul (Inversión)** y **pistacho
    (Ingresos)**: si Vida fuera verde, su punto de identidad se leería como el
-   veredicto "vas bien". **El rosa también está descartado**: mide lejos del
-   rojo (ΔE 29) pero junto a una barra roja se lee como su familia.
+   veredicto "vas bien". **El rosa está descartado**: mide lejos del rojo
+   (ΔE 29) pero junto a una barra roja se lee como su familia.
    `--bucket-transfer` es gris **a propósito**: significa "esto no cuenta".
+
+   ⚠️ **El pistacho de Ingresos está al borde y no se puede aclarar.** Bajo
+   protanopía el pistacho claro y el ámbar del semáforo **son el mismo color**
+   (`#65a30d` vs `#d6900f` → ΔE **0,8**). El valor en claro (`#548511`, ΔE 13,2)
+   es el más claro que aún se separa. Si alguien lo "mejora" subiéndolo, rompe
+   la app para los daltónicos sin que se note en pantalla.
    Las etiquetas **no llevan porcentaje** ("Vida", no "Vida (50%)"): son
    configurables desde la Fase 5 y el número mentiría a quien use 60/20/20.
 

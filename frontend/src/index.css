@@ -50,8 +50,11 @@
   --bucket-living: #6d28d9; /* violeta: Vida */
   --bucket-monthly: #0891b2; /* cian: Mes */
   --invest: #2f6fae; /* azul: Inversión */
-  --bucket-income: #4a8fe8; /* azul claro: Ingresos. El más claro que aún pasa
-                               3:1 sobre el fondo; #60a5fa se quedaba en 2,46. */
+  --bucket-income: #548511; /* pistacho: Ingresos. Es el **más claro que aún es
+                               seguro**: a partir de aquí se va contra el ámbar
+                               del semáforo bajo protanopía (#5a8f12 → ΔE 8,5;
+                               #65a30d → ΔE 0,8, el mismo color). Aquí: 13,2
+                               contra el ámbar y 27,5 contra el verde "ok". */
   --bucket-transfer: #8a867e; /* gris cálido: No computable (gris a propósito:
                                  significa "esto no cuenta") */
 }
@@ -88,15 +91,12 @@
      con el fondo y entre ellos (--primary #8ea6e8 e --invest #7aa6e6 estaban a
      ΔE 0,7 bajo protanopía: el mismo color).
 
-     Inversión se queda en el azul profundo y Ingresos toma el azul claro: los
-     separa la luminosidad (0.531 vs 0.655) **dentro** de la banda. Subir los dos
-     los juntaba a ΔE 8,2; así quedan en 14,4. Todo azul más claro que #5b93d9
-     se sale de la banda por arriba y pierde croma — que es justo el defecto que
-     se venía a arreglar. */
+     Ingresos aquí sí puede ser el pistacho claro: el ámbar de este modo
+     (#d9a648) está menos saturado y se separa (ΔE 12,4). En claro no cabía. */
   --bucket-living: #8b5cf6;
   --bucket-monthly: #0e9dbf;
   --invest: #2f6fae;
-  --bucket-income: #5b93d9;
+  --bucket-income: #65a30d;
   --bucket-transfer: #94919c;
 }
 
