@@ -13,8 +13,8 @@ Proyecto final del Máster de Desarrollo de Software con IA.
 | | |
 | --- | --- |
 | 🌐 **Aplicación desplegada** | **<https://numario.vercel.app>** |
-| 📊 **Presentación (slides)** | <!-- SLIDES --> `⚠️ pendiente — pegar URL aquí` |
-| 🎬 **Vídeo de presentación** | <!-- VIDEO --> `⚠️ pendiente — pegar URL aquí` |
+| 📊 **Presentación (slides)** | **https://canva.link/uf7wfsu0xsyvvzm** |
+| 🎬 **Vídeo de presentación** | **<!-- VIDEO --> `⚠️ pendiente — pegar URL aquí`** |
 | 💻 **Código fuente** | <https://github.com/MiguelAmayuelasDam/Numario> |
 
 > Para entrar en la aplicación, usa las credenciales de prueba del final:
@@ -230,10 +230,15 @@ tres acciones:
 - **Borrar** — con confirmación.
 
 **Categorías**
-79 categorías semilla ya mapeadas a los cubos del 50-30-20, más las que quieras
-crear. Cada una con su emoji, para reconocerla de un vistazo. En los desplegables
-aparecen **agrupadas por cubo** (Vida, Mes, Inversión…), para que al elegir una
-veas de un vistazo dónde va a caer el gasto.
+79 categorías ya mapeadas a los cubos del 50-30-20, cada una con su emoji para
+reconocerla de un vistazo. Cubren los gastos habituales de un extracto español,
+así que no hay que configurar nada antes de empezar. En los desplegables aparecen
+**agrupadas por cubo** (Vida, Mes, Inversión…), para que al elegir una veas dónde
+va a caer el gasto.
+
+> El modelo y la API admiten **categorías propias por usuario** (`user_id` en
+> `Category`, con su `POST /categories`), pero la interfaz todavía no lo expone:
+> queda como punto de extensión, no como funcionalidad.
 
 **Importación de extractos CSV**
 Subes el CSV del banco (formato imagin/CaixaBank) y ves una **vista previa antes
