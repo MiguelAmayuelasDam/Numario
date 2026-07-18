@@ -13,8 +13,8 @@ Proyecto final del Máster de Desarrollo de Software con IA.
 | | |
 | --- | --- |
 | 🌐 **Aplicación desplegada** | **<https://numario.vercel.app>** |
-| 📊 **Presentación (slides)** | <!-- SLIDES --> `⚠️ pendiente — pegar URL aquí` |
-| 🎬 **Vídeo de presentación** | <!-- VIDEO --> `⚠️ pendiente — pegar URL aquí` |
+| 📊 **Presentación (slides)** | **https://canva.link/uf7wfsu0xsyvvzm** |
+| 🎬 **Vídeo de presentación** | **<!-- VIDEO --> `⚠️ pendiente — pegar URL aquí`** |
 | 💻 **Código fuente** | <https://github.com/MiguelAmayuelasDam/Numario> |
 
 > Para entrar en la aplicación, usa las credenciales de prueba del final:
