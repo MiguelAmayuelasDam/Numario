@@ -183,7 +183,21 @@ export interface Asset {
   asset_class: AssetClass
   kind: AssetKind
   weight: string
+  group_id: string | null
   active: boolean
+}
+
+export interface InvestmentGroup {
+  id: string
+  name: string
+  asset_class: AssetClass
+  weight: string
+}
+
+export interface GroupInput {
+  name: string
+  asset_class: AssetClass
+  weight: string
 }
 
 export interface InvestmentAllocation {
@@ -203,6 +217,7 @@ export interface AssetInput {
   asset_class: AssetClass
   kind: AssetKind
   weight: string
+  group_id?: string | null
 }
 
 export type Granularity = "month" | "year"
@@ -433,6 +448,18 @@ export const api = {
         body: { variable_pct, fixed_pct },
         auth: true,
       }),
+    listGroups: (): Promise<InvestmentGroup[]> =>
+      request<InvestmentGroup[]>("/investment/groups", { auth: true }),
+    createGroup: (input: GroupInput): Promise<InvestmentGroup> =>
+      request<InvestmentGroup>("/investment/groups", { method: "POST", body: input, auth: true }),
+    updateGroup: (id: string, changes: Partial<GroupInput>): Promise<InvestmentGroup> =>
+      request<InvestmentGroup>(`/investment/groups/${id}`, {
+        method: "PATCH",
+        body: changes,
+        auth: true,
+      }),
+    deleteGroup: (id: string): Promise<void> =>
+      request<void>(`/investment/groups/${id}`, { method: "DELETE", auth: true }),
     listAssets: (): Promise<Asset[]> =>
       request<Asset[]>("/investment/assets", { auth: true }),
     createAsset: (input: AssetInput): Promise<Asset> =>

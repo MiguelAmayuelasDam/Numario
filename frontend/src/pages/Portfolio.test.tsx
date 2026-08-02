@@ -9,12 +9,13 @@ function json(status: number, body: unknown): Response {
   return { ok: status >= 200 && status < 300, status, json: async () => body } as Response
 }
 
-const asset = (id: string, name: string, cls: string, weight: string) => ({
+const asset = (id: string, name: string, cls: string, weight: string, group: string | null = null) => ({
   id,
   name,
   asset_class: cls,
   kind: "etf",
   weight,
+  group_id: group,
   active: true,
 })
 
@@ -24,9 +25,10 @@ const MONTH = [
   { asset: asset("3", "Fondo RF", "fija", "100"), planned: "200.00", contributed: "0.00", done: false },
 ]
 
-function installFetch(month = MONTH) {
+function installFetch(month = MONTH, groups: unknown[] = []) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url.includes("/investment/allocation")) return json(200, { variable_pct: 80, fixed_pct: 20 })
+    if (url.includes("/investment/groups")) return json(200, groups)
     if (url.includes("/investment/month")) return json(200, month)
     if (url.includes("/investment/contributions") && init?.method === "POST")
       return json(201, { id: "t1", amount: "480.00", type: "transfer" })
@@ -92,10 +94,23 @@ describe("Portfolio", () => {
     expect(screen.getByText(/1\/1 hecho/)).toBeInTheDocument()
   })
 
-  it("sin activos, invita a añadir el primero", async () => {
+  it("sin cartera, invita a empezar", async () => {
     installFetch([])
     renderPage()
 
-    expect(await screen.findByText(/Aún no tienes activos/)).toBeInTheDocument()
+    expect(await screen.findByText(/Aún no tienes cartera/)).toBeInTheDocument()
+  })
+
+  it("pinta los activos bajo la cabecera de su grupo", async () => {
+    const groups = [{ id: "g1", name: "Crecimiento", asset_class: "variable", weight: "70" }]
+    const month = [
+      { asset: asset("1", "SXR8", "variable", "30", "g1"), planned: "189.00", contributed: "0.00", done: false },
+    ]
+    installFetch(month, groups)
+    renderPage()
+
+    expect(await screen.findByText("Crecimiento")).toBeInTheDocument()
+    expect(screen.getByText("SXR8")).toBeInTheDocument()
+    expect(screen.getByText("189,00 €")).toBeInTheDocument()
   })
 })

@@ -511,9 +511,10 @@ en una **cartera de activos**: ETFs, fondos, acciones, cripto y renta fija.
 
 **Qué se implementó**
 
-- **Activos con peso objetivo dentro de su clase** (variable/fija) y un reparto
-  de clase (variable vs fija). Dos niveles: el total del mes se parte entre
-  clases y, dentro de cada una, entre sus activos por peso.
+- **Tres niveles**: clase (variable/fija) → grupo opcional → activo, cada uno
+  con su peso (% de su padre). Reproduce una hoja de asignación real: renta
+  variable repartida en «Crecimiento» y «Dividendos», y dentro de cada grupo
+  los activos por peso. Pesos literales (no se normaliza el único presente).
 - **Calculadora del mes**: se indica cuánto se va a invertir en total y la app
   calcula el importe exacto para cada activo. El reparto **cuadra al céntimo**
   (método del mayor resto; TDD, porque es lógica financiera).

@@ -40,12 +40,23 @@ from app.services import (  # noqa: E402
 )
 from sqlalchemy import select  # noqa: E402
 
-# Cartera de demostración: unos activos con su peso, para que la pantalla
-# "Cartera" no salga vacía. (nombre, clase, tipo, peso dentro de su clase)
-ACTIVOS = [
-    ("ETF MSCI World", "variable", "etf", "55"),
-    ("ETF S&P 500", "variable", "etf", "30"),
-    ("Bitcoin", "variable", "cripto", "15"),
+# Cartera de demostración de tres niveles, para que la pantalla "Cartera" enseñe
+# la estructura completa (clase → grupo → activo).
+#   Grupos: (nombre, clase, peso en la clase)
+CARTERA_GRUPOS = [
+    ("Crecimiento", "variable", "70"),
+    ("Dividendos", "variable", "30"),
+]
+#   Activos con grupo: (nombre, tipo, peso en el grupo, nombre del grupo)
+CARTERA_ACTIVOS_GRUPO = [
+    ("ETF MSCI World", "etf", "40", "Crecimiento"),
+    ("ETF S&P 500", "etf", "35", "Crecimiento"),
+    ("ETF Nasdaq 100", "etf", "25", "Crecimiento"),
+    ("ETF Dividendos", "etf", "60", "Dividendos"),
+    ("REIT inmobiliario", "accion", "40", "Dividendos"),
+]
+#   Activos sueltos (cuelgan directos de su clase): (nombre, clase, tipo, peso)
+CARTERA_ACTIVOS_SUELTOS = [
     ("Fondo Renta Fija Europa", "fija", "fondo", "100"),
 ]
 
@@ -214,10 +225,22 @@ def main() -> None:
         budget_service.set_emergency_months(db, user, 6)
         budget_service.set_emergency_monthly_need(db, user, Decimal("1600"))
 
-        # Cartera: reparto 85/15 y unos activos (sin aportaciones: la pantalla
-        # muestra el reparto calculado y el usuario marca lo que quiera en la demo).
+        # Cartera de tres niveles: reparto 85/15, dos grupos en variable con sus
+        # activos, y un activo suelto en fija. Sin aportaciones: la pantalla
+        # muestra el reparto calculado y el usuario marca lo que quiera en la demo.
         investment_service.set_allocation(db, user, variable_pct=85, fixed_pct=15)
-        for nombre, clase, tipo, peso in ACTIVOS:
+        grupos_por_nombre = {}
+        for nombre, clase, peso in CARTERA_GRUPOS:
+            grupo = investment_service.create_group(
+                db, user, name=nombre, asset_class=clase, weight=Decimal(peso)
+            )
+            grupos_por_nombre[nombre] = grupo.id
+        for nombre, tipo, peso, grupo_nombre in CARTERA_ACTIVOS_GRUPO:
+            investment_service.create_asset(
+                db, user, name=nombre, asset_class="variable", kind=tipo,
+                weight=Decimal(peso), group_id=grupos_por_nombre[grupo_nombre],
+            )
+        for nombre, clase, tipo, peso in CARTERA_ACTIVOS_SUELTOS:
             investment_service.create_asset(
                 db, user, name=nombre, asset_class=clase, kind=tipo, weight=Decimal(peso)
             )

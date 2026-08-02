@@ -32,7 +32,7 @@ test("cartera: crear activos, calcular el reparto y aportar", async ({ page }) =
 
   await page.goto("/cartera")
   await expect(page.getByRole("heading", { name: "Cartera" })).toBeVisible()
-  await expect(page.getByText(/Aún no tienes activos/)).toBeVisible()
+  await expect(page.getByText(/Aún no tienes cartera/)).toBeVisible()
 
   await addAsset(page, "ETF World", "60")
   await addAsset(page, "ETF SP500", "40")
