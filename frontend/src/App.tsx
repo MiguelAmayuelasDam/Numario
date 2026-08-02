@@ -9,6 +9,7 @@ import Dashboard from "@/pages/Dashboard"
 import EmergencyFund from "@/pages/EmergencyFund"
 import Import from "@/pages/Import"
 import Login from "@/pages/Login"
+import Portfolio from "@/pages/Portfolio"
 import Profile from "@/pages/Profile"
 import Register from "@/pages/Register"
 import Transactions from "@/pages/Transactions"
@@ -34,6 +35,7 @@ export default function App() {
               <Route path="/importar" element={<Import />} />
               <Route path="/analisis" element={<Analytics />} />
               <Route path="/colchon" element={<EmergencyFund />} />
+              <Route path="/cartera" element={<Portfolio />} />
               <Route path="/perfil" element={<Profile />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

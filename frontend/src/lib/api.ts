@@ -172,6 +172,39 @@ export interface EmergencyFund {
   contributions: EmergencyContribution[]
 }
 
+// ── Cartera de inversión ────────────────────────────────────────────────────
+
+export type AssetClass = "variable" | "fija"
+export type AssetKind = "etf" | "fondo" | "accion" | "cripto" | "otro"
+
+export interface Asset {
+  id: string
+  name: string
+  asset_class: AssetClass
+  kind: AssetKind
+  weight: string
+  active: boolean
+}
+
+export interface InvestmentAllocation {
+  variable_pct: number
+  fixed_pct: number
+}
+
+export interface MonthAsset {
+  asset: Asset
+  planned: string // lo que le tocaría según el reparto
+  contributed: string // lo aportado de verdad este mes
+  done: boolean
+}
+
+export interface AssetInput {
+  name: string
+  asset_class: AssetClass
+  kind: AssetKind
+  weight: string
+}
+
 export type Granularity = "month" | "year"
 
 export class ApiError extends Error {
@@ -389,5 +422,40 @@ export const api = {
         body: { amount },
         auth: true,
       }),
+  },
+
+  investment: {
+    getAllocation: (): Promise<InvestmentAllocation> =>
+      request<InvestmentAllocation>("/investment/allocation", { auth: true }),
+    setAllocation: (variable_pct: number, fixed_pct: number): Promise<InvestmentAllocation> =>
+      request<InvestmentAllocation>("/investment/allocation", {
+        method: "PUT",
+        body: { variable_pct, fixed_pct },
+        auth: true,
+      }),
+    listAssets: (): Promise<Asset[]> =>
+      request<Asset[]>("/investment/assets", { auth: true }),
+    createAsset: (input: AssetInput): Promise<Asset> =>
+      request<Asset>("/investment/assets", { method: "POST", body: input, auth: true }),
+    updateAsset: (id: string, changes: Partial<AssetInput> & { active?: boolean }): Promise<Asset> =>
+      request<Asset>(`/investment/assets/${id}`, { method: "PATCH", body: changes, auth: true }),
+    deleteAsset: (id: string): Promise<void> =>
+      request<void>(`/investment/assets/${id}`, { method: "DELETE", auth: true }),
+    month: (year: number, month: number, total: string): Promise<MonthAsset[]> =>
+      request<MonthAsset[]>(
+        `/investment/month?year=${year}&month=${month}&total=${total}`,
+        { auth: true },
+      ),
+    contribute: (asset_id: string, amount: string, occurred_on?: string): Promise<Transaction> =>
+      request<Transaction>("/investment/contributions", {
+        method: "POST",
+        body: { asset_id, amount, ...(occurred_on ? { occurred_on } : {}) },
+        auth: true,
+      }),
+    undoContribution: (asset_id: string, year: number, month: number): Promise<void> =>
+      request<void>(
+        `/investment/contributions?asset_id=${asset_id}&year=${year}&month=${month}`,
+        { method: "DELETE", auth: true },
+      ),
   },
 }
