@@ -22,13 +22,8 @@ async function register(page: Page): Promise<void> {
 async function addAsset(page: Page, name: string, weight: string): Promise<void> {
   await page.getByRole("button", { name: "Añadir activo" }).click()
   await page.getByLabel("Nombre").fill(name)
-  // El peso es un slider (input range): se fija con el setter nativo + evento
-  // input, que es lo que React escucha (fill() no funciona en un range).
-  await page.getByLabel("Peso dentro de su clase").evaluate((el, val) => {
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!
-    setter.call(el, val)
-    el.dispatchEvent(new Event("input", { bubbles: true }))
-  }, weight)
+  // El peso tiene barra + campo exacto; se teclea el valor en el campo.
+  await page.getByLabel("Peso exacto").fill(weight)
   await page.getByRole("button", { name: "Guardar" }).click()
   // El nombre aparece en la lista y en la leyenda del donut: basta con que exista.
   await expect(page.getByText(name).first()).toBeVisible()

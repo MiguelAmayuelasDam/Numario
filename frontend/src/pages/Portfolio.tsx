@@ -55,8 +55,9 @@ function weightSum(weights: string[]): number {
 }
 
 /**
- * Barra deslizable para un peso (%), con el valor a la vista y **topada** para
- * que junto a sus hermanos no supere el 100%. `max` es el margen disponible.
+ * Peso (%) con **barra deslizable + campo editable**: se arrastra para lo grueso
+ * y se teclea el valor exacto con hasta dos decimales (p. ej. 20,22). Ambos van
+ * topados al margen disponible (`max`) para no superar el 100% entre hermanos.
  */
 function WeightSlider({
   label,
@@ -69,28 +70,47 @@ function WeightSlider({
   max: number
   onChange: (v: string) => void
 }) {
-  const current = Math.min(Number(value) || 0, max)
+  const num = Number(value) || 0
+  const sliderValue = Math.min(num, max) // el range necesita un número ≤ max
+
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Label>{label}</Label>
-        <span className="text-sm font-semibold tabular-nums">{current}%</span>
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            min={0}
+            max={max}
+            step="0.01"
+            value={value}
+            aria-label="Peso exacto"
+            onChange={(e) => onChange(e.target.value)}
+            className="h-7 w-20 px-2 py-0 text-right text-sm tabular-nums"
+          />
+          <span className="text-sm text-muted-foreground">%</span>
+        </div>
       </div>
       <input
         type="range"
         min={0}
         max={max}
-        step={1}
-        value={current}
+        step={0.01}
+        value={sliderValue}
         aria-label={label}
         onChange={(e) => onChange(e.target.value)}
         className="w-full accent-[var(--invest)]"
       />
       <p className="text-xs text-muted-foreground">
-        {max >= 100 ? "Hasta 100%." : `Tope: ${max}% (lo que queda libre).`}
+        {max >= 100 ? "Hasta 100%." : `Tope: ${round2(max)}% (lo que queda libre).`}
       </p>
     </div>
   )
+}
+
+/** Redondea a 2 decimales, para que el margen no arrastre errores de coma flotante. */
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
 }
 
 /** Margen libre para un activo dentro de su padre (grupo o clase), excluyéndose. */
@@ -104,13 +124,17 @@ function assetRoom(
     if (a.id === selfId) return false
     return groupId ? a.group_id === groupId : a.asset_class === assetClass && !a.group_id
   })
-  return Math.max(0, 100 - siblings.reduce((s, a) => s + Number(a.weight), 0))
+  return round2(Math.max(0, 100 - siblings.reduce((s, a) => s + Number(a.weight), 0)))
 }
 
 /** Margen libre para un grupo dentro de su clase, excluyéndose. */
-function groupRoom(groups: InvestmentGroup[], assetClass: AssetClass, selfId: string | undefined): number {
+function groupRoom(
+  groups: InvestmentGroup[],
+  assetClass: AssetClass,
+  selfId: string | undefined,
+): number {
   const siblings = groups.filter((g) => g.id !== selfId && g.asset_class === assetClass)
-  return Math.max(0, 100 - siblings.reduce((s, g) => s + Number(g.weight), 0))
+  return round2(Math.max(0, 100 - siblings.reduce((s, g) => s + Number(g.weight), 0)))
 }
 
 export default function Portfolio() {
