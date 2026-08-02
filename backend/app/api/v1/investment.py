@@ -17,15 +17,21 @@ from app.schemas.investment import (
     AssetRead,
     AssetUpdate,
     ContributionCreate,
+    GroupCreate,
+    GroupRead,
+    GroupUpdate,
     MonthAssetRead,
 )
 from app.schemas.transaction import TransactionRead
 from app.services import investment_service
-from app.services.investment_service import AssetNotFoundError
+from app.services.investment_service import AssetNotFoundError, GroupNotFoundError
 
 router = APIRouter(prefix="/investment", tags=["investment"])
 
 _NOT_FOUND = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo no encontrado")
+_GROUP_NOT_FOUND = HTTPException(
+    status_code=status.HTTP_404_NOT_FOUND, detail="Grupo no encontrado"
+)
 
 
 # ── Reparto entre clases ────────────────────────────────────────────────────
@@ -42,6 +48,52 @@ def set_allocation(
     db: Session = Depends(get_db),
 ):
     return investment_service.set_allocation(db, user, payload.variable_pct, payload.fixed_pct)
+
+
+# ── Grupos ──────────────────────────────────────────────────────────────────
+
+@router.get("/groups", response_model=list[GroupRead])
+def list_groups(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return investment_service.list_groups(db, user)
+
+
+@router.post("/groups", response_model=GroupRead, status_code=status.HTTP_201_CREATED)
+def create_group(
+    payload: GroupCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return investment_service.create_group(
+        db, user, name=payload.name, asset_class=payload.asset_class, weight=payload.weight
+    )
+
+
+@router.patch("/groups/{group_id}", response_model=GroupRead)
+def update_group(
+    group_id: uuid.UUID,
+    payload: GroupUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        return investment_service.update_group(
+            db, user, group_id, **payload.model_dump(exclude_unset=True)
+        )
+    except GroupNotFoundError:
+        raise _GROUP_NOT_FOUND from None
+
+
+@router.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_group(
+    group_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Response:
+    try:
+        investment_service.delete_group(db, user, group_id)
+    except GroupNotFoundError:
+        raise _GROUP_NOT_FOUND from None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # ── Activos ─────────────────────────────────────────────────────────────────
@@ -61,14 +113,18 @@ def create_asset(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return investment_service.create_asset(
-        db,
-        user,
-        name=payload.name,
-        asset_class=payload.asset_class,
-        kind=payload.kind,
-        weight=payload.weight,
-    )
+    try:
+        return investment_service.create_asset(
+            db,
+            user,
+            name=payload.name,
+            asset_class=payload.asset_class,
+            kind=payload.kind,
+            weight=payload.weight,
+            group_id=payload.group_id,
+        )
+    except GroupNotFoundError:
+        raise _GROUP_NOT_FOUND from None
 
 
 @router.patch("/assets/{asset_id}", response_model=AssetRead)
@@ -84,6 +140,8 @@ def update_asset(
         )
     except AssetNotFoundError:
         raise _NOT_FOUND from None
+    except GroupNotFoundError:
+        raise _GROUP_NOT_FOUND from None
 
 
 @router.delete("/assets/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)

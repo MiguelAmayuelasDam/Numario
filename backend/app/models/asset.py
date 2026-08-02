@@ -1,9 +1,10 @@
 """Modelo Asset (activo de inversión de la cartera del usuario).
 
 Un activo es algo que genera valor económico: un ETF, un fondo, una acción,
-cripto o renta fija. Cada activo tiene un **peso objetivo dentro de su clase**
-(los de una misma clase suman 100), y el reparto entre clases —renta variable vs
-fija— vive en `InvestmentAllocation`.
+cripto o renta fija. El reparto tiene **tres niveles**: la clase (variable/fija,
+en `InvestmentAllocation`), un **grupo opcional** dentro de la clase
+(`InvestmentGroup`), y el activo. El `weight` es el peso **de su padre**: del
+grupo si lo tiene (`group_id`), o de la clase si cuelga directo.
 
 No guarda ni valor de mercado ni rentabilidad: eso el usuario lo sigue en su
 bróker (decisión de alcance). Aquí solo se planifican y registran las
@@ -36,7 +37,12 @@ class Asset(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     asset_class: Mapped[str] = mapped_column(String(10), nullable=False)  # variable | fija
     kind: Mapped[str] = mapped_column(String(10), nullable=False)  # etf | fondo | ...
-    # Peso objetivo **dentro de su clase**; los activos de una clase suman 100.
+    # Grupo opcional dentro de la clase. Si es NULL, el activo cuelga directo de
+    # la clase. SET NULL: al borrar el grupo, el activo pasa a suelto.
+    group_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("investment_groups.id", ondelete="SET NULL"), index=True, nullable=True
+    )
+    # Peso objetivo **dentro de su padre** (grupo o clase); los hermanos suman 100.
     weight: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False, default=Decimal(0))
     # Archivar sin borrar: conserva el histórico de aportaciones (asset_id) intacto.
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

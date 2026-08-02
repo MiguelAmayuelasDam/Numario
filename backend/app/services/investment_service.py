@@ -18,10 +18,11 @@ from sqlalchemy.orm import Session
 from app.models.asset import Asset
 from app.models.category import Category
 from app.models.investment_allocation import InvestmentAllocation
+from app.models.investment_group import InvestmentGroup
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.services import transaction_service
-from app.services.investment_plan import AssetWeight, compute_plan
+from app.services.investment_plan import AssetWeight, GroupWeight, compute_plan
 
 # La categoría semilla a la que se imputan las aportaciones. Es un traspaso
 # (no computable), y su bucket es "investment", así que alimenta el cubo.
@@ -30,6 +31,10 @@ INVESTMENT_CATEGORY = "Inversiones"
 
 class AssetNotFoundError(Exception):
     """El activo no existe o no es del usuario."""
+
+
+class GroupNotFoundError(Exception):
+    """El grupo no existe o no es del usuario."""
 
 
 @dataclass
@@ -64,6 +69,68 @@ def set_allocation(
     return alloc
 
 
+# ── Grupos ──────────────────────────────────────────────────────────────────
+
+def list_groups(db: Session, user: User) -> list[InvestmentGroup]:
+    stmt = (
+        select(InvestmentGroup)
+        .where(InvestmentGroup.user_id == user.id)
+        .order_by(InvestmentGroup.sort_order, InvestmentGroup.created_at)
+    )
+    return list(db.scalars(stmt).all())
+
+
+def create_group(
+    db: Session, user: User, *, name: str, asset_class: str, weight: Decimal
+) -> InvestmentGroup:
+    last = db.scalar(
+        select(InvestmentGroup.sort_order)
+        .where(InvestmentGroup.user_id == user.id)
+        .order_by(InvestmentGroup.sort_order.desc())
+    )
+    group = InvestmentGroup(
+        user_id=user.id,
+        name=name.strip(),
+        asset_class=asset_class,
+        weight=weight,
+        sort_order=(last or 0) + 1,
+    )
+    db.add(group)
+    db.commit()
+    db.refresh(group)
+    return group
+
+
+def _get_group(db: Session, user: User, group_id: uuid.UUID) -> InvestmentGroup:
+    group = db.get(InvestmentGroup, group_id)
+    if group is None or group.user_id != user.id:
+        raise GroupNotFoundError
+    return group
+
+
+def update_group(
+    db: Session, user: User, group_id: uuid.UUID, **changes: object
+) -> InvestmentGroup:
+    group = _get_group(db, user, group_id)
+    for field in ("name", "asset_class", "weight"):
+        if field in changes and changes[field] is not None:
+            setattr(group, field, changes[field])
+    db.commit()
+    db.refresh(group)
+    return group
+
+
+def delete_group(db: Session, user: User, group_id: uuid.UUID) -> None:
+    group = _get_group(db, user, group_id)
+    # Sus activos pasan a colgar directos de la clase. Se hace explícito y no por
+    # el ON DELETE SET NULL de la FK: SQLite (los tests) no lo aplica por defecto,
+    # así que dependemos del motor si no lo hacemos aquí.
+    for asset in db.scalars(select(Asset).where(Asset.group_id == group_id)).all():
+        asset.group_id = None
+    db.delete(group)
+    db.commit()
+
+
 # ── Activos ─────────────────────────────────────────────────────────────────
 
 def list_assets(db: Session, user: User, *, include_archived: bool = False) -> list[Asset]:
@@ -75,8 +142,19 @@ def list_assets(db: Session, user: User, *, include_archived: bool = False) -> l
 
 
 def create_asset(
-    db: Session, user: User, *, name: str, asset_class: str, kind: str, weight: Decimal
+    db: Session,
+    user: User,
+    *,
+    name: str,
+    asset_class: str,
+    kind: str,
+    weight: Decimal,
+    group_id: uuid.UUID | None = None,
 ) -> Asset:
+    # El grupo, si se indica, debe ser del usuario y de la misma clase.
+    if group_id is not None:
+        group = _get_group(db, user, group_id)
+        asset_class = group.asset_class
     # El nuevo va al final (mayor sort_order + 1).
     last = db.scalar(
         select(Asset.sort_order).where(Asset.user_id == user.id).order_by(Asset.sort_order.desc())
@@ -87,6 +165,7 @@ def create_asset(
         asset_class=asset_class,
         kind=kind,
         weight=weight,
+        group_id=group_id,
         sort_order=(last or 0) + 1,
     )
     db.add(asset)
@@ -104,6 +183,13 @@ def _get_asset(db: Session, user: User, asset_id: uuid.UUID) -> Asset:
 
 def update_asset(db: Session, user: User, asset_id: uuid.UUID, **changes: object) -> Asset:
     asset = _get_asset(db, user, asset_id)
+    # `group_id` puede venir como None a propósito (desasignar), así que se trata
+    # aparte de los demás campos (donde None = "no cambiar").
+    if "group_id" in changes:
+        gid = changes.pop("group_id")
+        asset.group_id = None if gid is None else uuid.UUID(str(gid))
+        if asset.group_id is not None:
+            asset.asset_class = _get_group(db, user, asset.group_id).asset_class
     for field in ("name", "asset_class", "kind", "weight", "active"):
         if field in changes and changes[field] is not None:
             setattr(asset, field, changes[field])
@@ -122,9 +208,12 @@ def delete_asset(db: Session, user: User, asset_id: uuid.UUID) -> None:
 
 def _plan_for(db: Session, user: User, total: Decimal) -> dict[str, Decimal]:
     alloc = get_allocation(db, user)
-    assets = list_assets(db, user)
-    weights = [AssetWeight(str(a.id), a.asset_class, a.weight) for a in assets]
-    return compute_plan(total, alloc.variable_pct, alloc.fixed_pct, weights)
+    groups = [GroupWeight(str(g.id), g.asset_class, g.weight) for g in list_groups(db, user)]
+    assets = [
+        AssetWeight(str(a.id), a.asset_class, str(a.group_id) if a.group_id else None, a.weight)
+        for a in list_assets(db, user)
+    ]
+    return compute_plan(total, alloc.variable_pct, alloc.fixed_pct, groups, assets)
 
 
 def _contributed_by_asset(

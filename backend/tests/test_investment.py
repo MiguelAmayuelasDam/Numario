@@ -58,6 +58,14 @@ def test_update_and_archive_asset(client: TestClient, auth_headers: dict[str, st
     assert len(client.get(f"{BASE}/assets?include_archived=true", headers=auth_headers).json()) == 1
 
 
+def _group(client, headers, name, cls="variable", weight="100"):
+    return client.post(
+        f"{BASE}/groups",
+        headers=headers,
+        json={"name": name, "asset_class": cls, "weight": weight},
+    )
+
+
 def test_month_plan_splits_by_weight(client: TestClient, auth_headers: dict[str, str]) -> None:
     client.put(
         f"{BASE}/allocation", headers=auth_headers, json={"variable_pct": 70, "fixed_pct": 30}
@@ -70,6 +78,77 @@ def test_month_plan_splits_by_weight(client: TestClient, auth_headers: dict[str,
     planned = {m["asset"]["name"]: m["planned"] for m in month}
     assert planned == {"ETF World": "420.00", "ETF SP": "280.00", "Fondo RF": "300.00"}
     assert all(m["done"] is False for m in month)
+
+
+def test_three_level_plan_matches_excel(client: TestClient, auth_headers: dict[str, str]) -> None:
+    """El caso real del autor por la API: 1000 · 90/10 · variable en dos grupos."""
+    client.put(
+        f"{BASE}/allocation", headers=auth_headers, json={"variable_pct": 90, "fixed_pct": 10}
+    )
+    crecimiento = _group(client, auth_headers, "Crecimiento", "variable", "70").json()["id"]
+    dividendos = _group(client, auth_headers, "Dividendos", "variable", "30").json()["id"]
+
+    def in_group(name, gid, weight):
+        client.post(
+            f"{BASE}/assets",
+            headers=auth_headers,
+            json={"name": name, "asset_class": "variable", "kind": "etf",
+                  "weight": weight, "group_id": gid},
+        )
+
+    in_group("SXR8", crecimiento, "30")
+    in_group("SXRV", crecimiento, "30")
+    in_group("IWDA", crecimiento, "20")
+    in_group("EMIM", crecimiento, "20")
+    in_group("VHYL", dividendos, "40")
+    _asset(client, auth_headers, "VDTA", "fija", "fondo", "50")
+    _asset(client, auth_headers, "IEAC", "fija", "fondo", "50")
+
+    month = client.get(f"{BASE}/month?year=2026&month=8&total=1000", headers=auth_headers).json()
+    planned = {m["asset"]["name"]: m["planned"] for m in month}
+    assert planned["SXR8"] == "189.00"  # 1000 × 90% × 70% × 30%
+    assert planned["IWDA"] == "126.00"  # × 20%
+    assert planned["VHYL"] == "108.00"  # 1000 × 90% × 30% × 40%
+    assert planned["VDTA"] == "50.00"  # 1000 × 10% × 50%
+
+
+def test_asset_in_group_takes_group_class(client: TestClient, auth_headers: dict[str, str]) -> None:
+    gid = _group(client, auth_headers, "RF", "fija", "100").json()["id"]
+    created = client.post(
+        f"{BASE}/assets",
+        headers=auth_headers,
+        # Aunque diga "variable", al ir a un grupo de renta fija toma su clase.
+        json={"name": "Bono", "asset_class": "variable", "kind": "fondo",
+              "weight": "100", "group_id": gid},
+    ).json()
+    assert created["asset_class"] == "fija"
+    assert created["group_id"] == gid
+
+
+def test_deleting_group_leaves_assets_loose(
+    client: TestClient, auth_headers: dict[str, str]
+) -> None:
+    gid = _group(client, auth_headers, "G", "variable", "100").json()["id"]
+    client.post(
+        f"{BASE}/assets",
+        headers=auth_headers,
+        json={"name": "X", "asset_class": "variable", "kind": "etf",
+              "weight": "100", "group_id": gid},
+    )
+    assert client.delete(f"{BASE}/groups/{gid}", headers=auth_headers).status_code == 204
+    # El activo sigue existiendo, ahora sin grupo.
+    assets = client.get(f"{BASE}/assets", headers=auth_headers).json()
+    assert len(assets) == 1
+    assert assets[0]["group_id"] is None
+
+
+def test_group_of_another_user_is_404(client: TestClient, auth_headers: dict[str, str]) -> None:
+    r = client.patch(
+        f"{BASE}/groups/00000000-0000-0000-0000-000000000000",
+        headers=auth_headers,
+        json={"weight": "50"},
+    )
+    assert r.status_code == 404
 
 
 def test_contribution_creates_movement_and_marks_done(

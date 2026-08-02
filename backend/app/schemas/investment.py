@@ -12,6 +12,27 @@ from app.schemas.common import MAX_AMOUNT, MoneyStr
 AssetClass = tuple(ASSET_CLASSES)  # ("variable", "fija")
 
 
+class GroupRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    asset_class: str
+    weight: Decimal
+
+
+class GroupCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    asset_class: str = Field(pattern="^(variable|fija)$")
+    weight: Decimal = Field(ge=0, le=100, max_digits=6, decimal_places=2)
+
+
+class GroupUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    asset_class: str | None = Field(default=None, pattern="^(variable|fija)$")
+    weight: Decimal | None = Field(default=None, ge=0, le=100, max_digits=6, decimal_places=2)
+
+
 class AssetRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -20,6 +41,7 @@ class AssetRead(BaseModel):
     asset_class: str
     kind: str
     weight: Decimal
+    group_id: uuid.UUID | None
     active: bool
 
 
@@ -28,6 +50,7 @@ class AssetCreate(BaseModel):
     asset_class: str = Field(pattern="^(variable|fija)$")
     kind: str = Field(pattern="^(etf|fondo|accion|cripto|otro)$")
     weight: Decimal = Field(ge=0, le=100, max_digits=6, decimal_places=2)
+    group_id: uuid.UUID | None = None  # None = cuelga directo de la clase
 
     @model_validator(mode="after")
     def _known_kind(self) -> "AssetCreate":
@@ -37,10 +60,14 @@ class AssetCreate(BaseModel):
 
 
 class AssetUpdate(BaseModel):
+    # `group_id` usa un centinela para distinguir "no tocar" de "poner a None".
+    model_config = ConfigDict(extra="forbid")
+
     name: str | None = Field(default=None, min_length=1, max_length=100)
     asset_class: str | None = Field(default=None, pattern="^(variable|fija)$")
     kind: str | None = Field(default=None, pattern="^(etf|fondo|accion|cripto|otro)$")
     weight: Decimal | None = Field(default=None, ge=0, le=100, max_digits=6, decimal_places=2)
+    group_id: uuid.UUID | None = None
     active: bool | None = None
 
 
