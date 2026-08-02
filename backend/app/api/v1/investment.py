@@ -24,7 +24,11 @@ from app.schemas.investment import (
 )
 from app.schemas.transaction import TransactionRead
 from app.services import investment_service
-from app.services.investment_service import AssetNotFoundError, GroupNotFoundError
+from app.services.investment_service import (
+    AssetNotFoundError,
+    GroupNotFoundError,
+    WeightExceededError,
+)
 
 router = APIRouter(prefix="/investment", tags=["investment"])
 
@@ -32,6 +36,13 @@ _NOT_FOUND = HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Activo
 _GROUP_NOT_FOUND = HTTPException(
     status_code=status.HTTP_404_NOT_FOUND, detail="Grupo no encontrado"
 )
+
+
+def _weight_error(err: WeightExceededError) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=f"Los pesos superarían el 100%. Quedan {err.room}% libres.",
+    )
 
 
 # ── Reparto entre clases ────────────────────────────────────────────────────
@@ -63,9 +74,12 @@ def create_group(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return investment_service.create_group(
-        db, user, name=payload.name, asset_class=payload.asset_class, weight=payload.weight
-    )
+    try:
+        return investment_service.create_group(
+            db, user, name=payload.name, asset_class=payload.asset_class, weight=payload.weight
+        )
+    except WeightExceededError as err:
+        raise _weight_error(err) from None
 
 
 @router.patch("/groups/{group_id}", response_model=GroupRead)
@@ -81,6 +95,8 @@ def update_group(
         )
     except GroupNotFoundError:
         raise _GROUP_NOT_FOUND from None
+    except WeightExceededError as err:
+        raise _weight_error(err) from None
 
 
 @router.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -125,6 +141,8 @@ def create_asset(
         )
     except GroupNotFoundError:
         raise _GROUP_NOT_FOUND from None
+    except WeightExceededError as err:
+        raise _weight_error(err) from None
 
 
 @router.patch("/assets/{asset_id}", response_model=AssetRead)
@@ -142,6 +160,8 @@ def update_asset(
         raise _NOT_FOUND from None
     except GroupNotFoundError:
         raise _GROUP_NOT_FOUND from None
+    except WeightExceededError as err:
+        raise _weight_error(err) from None
 
 
 @router.delete("/assets/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)

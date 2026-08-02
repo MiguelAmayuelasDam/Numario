@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Check, Trash2 } from "lucide-react"
 
 import { PortfolioHint } from "@/components/hints"
+import { PortfolioDonut } from "@/components/PortfolioDonut"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -53,6 +54,65 @@ function weightSum(weights: string[]): number {
   return weights.reduce((s, w) => s + Number(w), 0)
 }
 
+/**
+ * Barra deslizable para un peso (%), con el valor a la vista y **topada** para
+ * que junto a sus hermanos no supere el 100%. `max` es el margen disponible.
+ */
+function WeightSlider({
+  label,
+  value,
+  max,
+  onChange,
+}: {
+  label: string
+  value: string
+  max: number
+  onChange: (v: string) => void
+}) {
+  const current = Math.min(Number(value) || 0, max)
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <Label>{label}</Label>
+        <span className="text-sm font-semibold tabular-nums">{current}%</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={max}
+        step={1}
+        value={current}
+        aria-label={label}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full accent-[var(--invest)]"
+      />
+      <p className="text-xs text-muted-foreground">
+        {max >= 100 ? "Hasta 100%." : `Tope: ${max}% (lo que queda libre).`}
+      </p>
+    </div>
+  )
+}
+
+/** Margen libre para un activo dentro de su padre (grupo o clase), excluyéndose. */
+function assetRoom(
+  assets: Asset[],
+  groupId: string | null,
+  assetClass: AssetClass,
+  selfId: string | undefined,
+): number {
+  const siblings = assets.filter((a) => {
+    if (a.id === selfId) return false
+    return groupId ? a.group_id === groupId : a.asset_class === assetClass && !a.group_id
+  })
+  return Math.max(0, 100 - siblings.reduce((s, a) => s + Number(a.weight), 0))
+}
+
+/** Margen libre para un grupo dentro de su clase, excluyéndose. */
+function groupRoom(groups: InvestmentGroup[], assetClass: AssetClass, selfId: string | undefined): number {
+  const siblings = groups.filter((g) => g.id !== selfId && g.asset_class === assetClass)
+  return Math.max(0, 100 - siblings.reduce((s, g) => s + Number(g.weight), 0))
+}
+
 export default function Portfolio() {
   const { year, month } = useMemo(monthKey, [])
   const [rows, setRows] = useState<MonthAsset[]>([])
@@ -67,27 +127,49 @@ export default function Portfolio() {
   const [groupDialog, setGroupDialog] = useState(false)
   const [editingGroup, setEditingGroup] = useState<InvestmentGroup | null>(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const [alloc, grps, monthRows] = await Promise.all([
-        api.investment.getAllocation(),
-        api.investment.listGroups(),
-        api.investment.month(year, month, total || "0"),
-      ])
-      setVariablePct(alloc.variable_pct)
-      setGroups(grps)
-      setRows(monthRows)
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "No se pudo cargar la cartera")
-    } finally {
-      setLoading(false)
-    }
-  }, [year, month, total])
+  // El total se lee por ref para que recargar la estructura NO dependa de él: si
+  // dependiera, cada tecla recrearía `load`, dispararía el spinner y desmontaría
+  // el input de "a invertir" (que perdía el foco a cada pulsación).
+  const totalRef = useRef(total)
+  totalRef.current = total
 
+  const load = useCallback(
+    async (spinner = false) => {
+      if (spinner) setLoading(true)
+      try {
+        const [alloc, grps, monthRows] = await Promise.all([
+          api.investment.getAllocation(),
+          api.investment.listGroups(),
+          api.investment.month(year, month, totalRef.current || "0"),
+        ])
+        setVariablePct(alloc.variable_pct)
+        setGroups(grps)
+        setRows(monthRows)
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : "No se pudo cargar la cartera")
+      } finally {
+        if (spinner) setLoading(false)
+      }
+    },
+    [year, month],
+  )
+
+  // Carga inicial (con spinner).
   useEffect(() => {
-    void load()
+    void load(true)
   }, [load])
+
+  // Al cambiar el total, solo se recalcula el reparto (los importes), sin spinner
+  // y con un pequeño retardo, para no desmontar nada ni machacar la API.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      api.investment
+        .month(year, month, total || "0")
+        .then(setRows)
+        .catch(() => {})
+    }, 250)
+    return () => clearTimeout(id)
+  }, [total, year, month])
 
   const saveAllocation = async (variable: number) => {
     setVariablePct(variable)
@@ -125,6 +207,7 @@ export default function Portfolio() {
   const doneCount = rows.filter((r) => r.done).length
   const plannedTotal = rows.reduce((sum, r) => sum + Number(r.planned), 0)
   const hasContent = rows.length > 0 || groups.length > 0
+  const assets = useMemo(() => rows.map((r) => r.asset), [rows])
 
   // Estructura en árbol para pintar: por clase, sus grupos y sus activos sueltos.
   const tree = useMemo(() => {
@@ -229,6 +312,14 @@ export default function Portfolio() {
             </div>
           </section>
 
+          {/* Gráfico del reparto por activo */}
+          {assets.length > 0 ? (
+            <section className="mb-6 rounded-lg border p-4">
+              <h2 className="mb-3 font-semibold">Reparto por activo</h2>
+              <PortfolioDonut assets={assets} groups={groups} variablePct={variablePct} />
+            </section>
+          ) : null}
+
           {/* Árbol: clase → grupos → activos */}
           <div className="space-y-5">
             {tree.map(({ cls, groups: clsGroups, loose }) => (
@@ -310,6 +401,7 @@ export default function Portfolio() {
         open={assetDialog}
         asset={editingAsset}
         groups={groups}
+        assets={assets}
         onOpenChange={setAssetDialog}
         onSaved={() => {
           setAssetDialog(false)
@@ -320,6 +412,7 @@ export default function Portfolio() {
       <GroupDialog
         open={groupDialog}
         group={editingGroup}
+        groups={groups}
         onOpenChange={setGroupDialog}
         onSaved={() => {
           setGroupDialog(false)
@@ -390,11 +483,13 @@ function AssetRows({
 function GroupDialog({
   open,
   group,
+  groups,
   onOpenChange,
   onSaved,
 }: {
   open: boolean
   group: InvestmentGroup | null
+  groups: InvestmentGroup[]
   onOpenChange: (v: boolean) => void
   onSaved: () => void
 }) {
@@ -444,35 +539,27 @@ function GroupDialog({
               maxLength={100}
             />
           </div>
-          <div className="flex gap-3">
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="group-class">Clase</Label>
-              <Select value={assetClass} onValueChange={(v) => setAssetClass(v as AssetClass)}>
-                <SelectTrigger id="group-class" aria-label="Clase del grupo">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(["variable", "fija"] as AssetClass[]).map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {CLASS_LABEL[c]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="group-weight">Peso en su clase (%)</Label>
-              <Input
-                id="group-weight"
-                type="number"
-                min="0"
-                max="100"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="70"
-              />
-            </div>
+          <div className="space-y-1">
+            <Label htmlFor="group-class">Clase</Label>
+            <Select value={assetClass} onValueChange={(v) => setAssetClass(v as AssetClass)}>
+              <SelectTrigger id="group-class" aria-label="Clase del grupo">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(["variable", "fija"] as AssetClass[]).map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {CLASS_LABEL[c]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          <WeightSlider
+            label="Peso en su clase"
+            value={weight}
+            max={groupRoom(groups, assetClass, group?.id)}
+            onChange={setWeight}
+          />
           {error ? (
             <p className="text-sm text-destructive" role="alert">
               {error}
@@ -496,6 +583,7 @@ function AssetDialog({
   open,
   asset,
   groups,
+  assets,
   onOpenChange,
   onSaved,
   onDelete,
@@ -503,6 +591,7 @@ function AssetDialog({
   open: boolean
   asset: Asset | null
   groups: InvestmentGroup[]
+  assets: Asset[]
   onOpenChange: (v: boolean) => void
   onSaved: () => void
   onDelete?: () => void
@@ -619,20 +708,12 @@ function AssetDialog({
               </Select>
             </div>
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="asset-weight">
-              Peso dentro de su {groupClass !== null ? "grupo" : "clase"} (%)
-            </Label>
-            <Input
-              id="asset-weight"
-              type="number"
-              min="0"
-              max="100"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              placeholder="30"
-            />
-          </div>
+          <WeightSlider
+            label={`Peso dentro de su ${groupClass !== null ? "grupo" : "clase"}`}
+            value={weight}
+            max={assetRoom(assets, groupId === NO_GROUP ? null : groupId, effectiveClass, asset?.id)}
+            onChange={setWeight}
+          />
           {error ? (
             <p className="text-sm text-destructive" role="alert">
               {error}

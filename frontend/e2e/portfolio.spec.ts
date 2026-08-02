@@ -22,9 +22,16 @@ async function register(page: Page): Promise<void> {
 async function addAsset(page: Page, name: string, weight: string): Promise<void> {
   await page.getByRole("button", { name: "Añadir activo" }).click()
   await page.getByLabel("Nombre").fill(name)
-  await page.getByLabel("Peso dentro de su clase (%)").fill(weight)
+  // El peso es un slider (input range): se fija con el setter nativo + evento
+  // input, que es lo que React escucha (fill() no funciona en un range).
+  await page.getByLabel("Peso dentro de su clase").evaluate((el, val) => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!
+    setter.call(el, val)
+    el.dispatchEvent(new Event("input", { bubbles: true }))
+  }, weight)
   await page.getByRole("button", { name: "Guardar" }).click()
-  await expect(page.getByText(name)).toBeVisible()
+  // El nombre aparece en la lista y en la leyenda del donut: basta con que exista.
+  await expect(page.getByText(name).first()).toBeVisible()
 }
 
 test("cartera: crear activos, calcular el reparto y aportar", async ({ page }) => {
@@ -39,8 +46,8 @@ test("cartera: crear activos, calcular el reparto y aportar", async ({ page }) =
 
   // Total 1000 → reparto 600 / 400 (100% variable por defecto).
   await page.getByLabel("A invertir este mes (€)").fill("1000")
-  await expect(page.getByText("600,00 €")).toBeVisible()
-  await expect(page.getByText("400,00 €")).toBeVisible()
+  await expect(page.getByText("600,00 €").first()).toBeVisible()
+  await expect(page.getByText("400,00 €").first()).toBeVisible()
 
   // Marcar el primero como hecho.
   await page.getByRole("button", { name: /Marcar ETF World/ }).click()

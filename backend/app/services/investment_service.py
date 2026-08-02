@@ -37,6 +37,49 @@ class GroupNotFoundError(Exception):
     """El grupo no existe o no es del usuario."""
 
 
+class WeightExceededError(Exception):
+    """Los pesos de un padre (grupo o clase) superarían el 100%."""
+
+    def __init__(self, room: Decimal) -> None:
+        self.room = room
+        super().__init__(f"Los pesos superan el 100%; quedan {room}% libres")
+
+
+def _siblings_weight(items: object, weight_attr: str, exclude_id: uuid.UUID | None) -> Decimal:
+    """Suma de pesos de una lista de hermanos, excluyendo el que se edita."""
+    total = Decimal("0")
+    for it in items:  # type: ignore[attr-defined]
+        if exclude_id is not None and it.id == exclude_id:
+            continue
+        total += getattr(it, weight_attr)
+    return total
+
+
+def _group_room(
+    db: "Session", user: "User", asset_class: str, exclude_id: uuid.UUID | None = None
+) -> Decimal:
+    """Cuánto peso libre queda para un grupo dentro de su clase (100 - el resto)."""
+    same_class = [g for g in list_groups(db, user) if g.asset_class == asset_class]
+    return Decimal(100) - _siblings_weight(same_class, "weight", exclude_id)
+
+
+def _asset_room(
+    db: "Session",
+    user: "User",
+    *,
+    group_id: uuid.UUID | None,
+    asset_class: str,
+    exclude_id: uuid.UUID | None = None,
+) -> Decimal:
+    """Peso libre para un activo dentro de su padre (su grupo, o su clase si es suelto)."""
+    active = list_assets(db, user)  # solo activos: los archivados no ocupan reparto
+    if group_id is not None:
+        siblings = [a for a in active if a.group_id == group_id]
+    else:
+        siblings = [a for a in active if a.asset_class == asset_class and a.group_id is None]
+    return Decimal(100) - _siblings_weight(siblings, "weight", exclude_id)
+
+
 @dataclass
 class MonthAssetStatus:
     asset: Asset
@@ -83,6 +126,9 @@ def list_groups(db: Session, user: User) -> list[InvestmentGroup]:
 def create_group(
     db: Session, user: User, *, name: str, asset_class: str, weight: Decimal
 ) -> InvestmentGroup:
+    room = _group_room(db, user, asset_class)
+    if weight > room:
+        raise WeightExceededError(room)
     last = db.scalar(
         select(InvestmentGroup.sort_order)
         .where(InvestmentGroup.user_id == user.id)
@@ -112,6 +158,12 @@ def update_group(
     db: Session, user: User, group_id: uuid.UUID, **changes: object
 ) -> InvestmentGroup:
     group = _get_group(db, user, group_id)
+    new_class = changes.get("asset_class") or group.asset_class
+    new_weight = changes.get("weight")
+    new_weight = group.weight if new_weight is None else Decimal(str(new_weight))
+    room = _group_room(db, user, str(new_class), exclude_id=group.id)
+    if new_weight > room:
+        raise WeightExceededError(room)
     for field in ("name", "asset_class", "weight"):
         if field in changes and changes[field] is not None:
             setattr(group, field, changes[field])
@@ -155,6 +207,9 @@ def create_asset(
     if group_id is not None:
         group = _get_group(db, user, group_id)
         asset_class = group.asset_class
+    room = _asset_room(db, user, group_id=group_id, asset_class=asset_class)
+    if weight > room:
+        raise WeightExceededError(room)
     # El nuevo va al final (mayor sort_order + 1).
     last = db.scalar(
         select(Asset.sort_order).where(Asset.user_id == user.id).order_by(Asset.sort_order.desc())
@@ -190,6 +245,18 @@ def update_asset(db: Session, user: User, asset_id: uuid.UUID, **changes: object
         asset.group_id = None if gid is None else uuid.UUID(str(gid))
         if asset.group_id is not None:
             asset.asset_class = _get_group(db, user, asset.group_id).asset_class
+
+    # Comprobar el 100% del padre **destino** (con el grupo/clase ya actualizados),
+    # excluyendo el propio activo de la suma de hermanos.
+    new_weight = changes.get("weight")
+    new_weight = asset.weight if new_weight is None else Decimal(str(new_weight))
+    new_class = changes.get("asset_class") or asset.asset_class
+    room = _asset_room(
+        db, user, group_id=asset.group_id, asset_class=str(new_class), exclude_id=asset.id
+    )
+    if new_weight > room:
+        raise WeightExceededError(room)
+
     for field in ("name", "asset_class", "kind", "weight", "active"):
         if field in changes and changes[field] is not None:
             setattr(asset, field, changes[field])

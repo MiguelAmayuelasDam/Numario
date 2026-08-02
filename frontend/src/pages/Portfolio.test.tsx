@@ -59,7 +59,8 @@ describe("Portfolio", () => {
     installFetch()
     renderPage()
 
-    expect(await screen.findByText("ETF World")).toBeInTheDocument()
+    await screen.findAllByText("ETF World")  // en la lista y en la leyenda del donut
+    expect(screen.getAllByText("ETF World").length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText("480,00 €")).toBeInTheDocument()
     expect(screen.getByText("320,00 €")).toBeInTheDocument()
     // El contador refleja cuántos van hechos.
@@ -70,7 +71,7 @@ describe("Portfolio", () => {
     const fetchMock = installFetch()
     const user = userEvent.setup()
     renderPage()
-    await screen.findByText("ETF World")
+    await screen.findAllByText("ETF World")
 
     await user.click(screen.getByRole("button", { name: /Marcar ETF World/ }))
 
@@ -110,7 +111,23 @@ describe("Portfolio", () => {
     renderPage()
 
     expect(await screen.findByText("Crecimiento")).toBeInTheDocument()
-    expect(screen.getByText("SXR8")).toBeInTheDocument()
+    // SXR8 aparece en la lista del grupo y en la leyenda del donut.
+    expect(screen.getAllByText("SXR8").length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText("189,00 €")).toBeInTheDocument()
+  })
+
+  it("el donut muestra el peso efectivo de cada activo", async () => {
+    const groups = [{ id: "g1", name: "Crecimiento", asset_class: "variable", weight: "50" }]
+    // 80% variable · grupo 50% · activo 100% → efectivo 40% del total.
+    const month = [
+      { asset: asset("1", "SXR8", "variable", "100", "g1"), planned: "0.00", contributed: "0.00", done: false },
+    ]
+    installFetch(month, groups)
+    renderPage()
+
+    await screen.findByText("Reparto por activo")
+    expect(screen.getByText("40.0%")).toBeInTheDocument()
+    // El 60% restante queda sin asignar.
+    expect(screen.getByText("Sin asignar")).toBeInTheDocument()
   })
 })

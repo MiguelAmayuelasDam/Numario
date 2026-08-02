@@ -151,6 +151,49 @@ def test_group_of_another_user_is_404(client: TestClient, auth_headers: dict[str
     assert r.status_code == 404
 
 
+def test_asset_weights_cannot_exceed_100(client: TestClient, auth_headers: dict[str, str]) -> None:
+    _asset(client, auth_headers, "A", "variable", "etf", "70")
+    # 70 + 40 = 110 > 100 → rechazado.
+    r = _asset(client, auth_headers, "B", "variable", "etf", "40")
+    assert r.status_code == 422
+    assert "100%" in r.json()["detail"]
+    # 30 sí cabe (70 + 30 = 100).
+    assert _asset(client, auth_headers, "B", "variable", "etf", "30").status_code == 201
+
+
+def test_group_weights_cannot_exceed_100(client: TestClient, auth_headers: dict[str, str]) -> None:
+    _group(client, auth_headers, "G1", "variable", "70")
+    assert _group(client, auth_headers, "G2", "variable", "40").status_code == 422
+    # En OTRA clase, el 100% se cuenta aparte.
+    assert _group(client, auth_headers, "GF", "fija", "100").status_code == 201
+
+
+def test_room_is_per_parent(client: TestClient, auth_headers: dict[str, str]) -> None:
+    # Dos grupos, cada uno con sus propios 100% de margen interno.
+    g1 = _group(client, auth_headers, "G1", "variable", "50").json()["id"]
+    g2 = _group(client, auth_headers, "G2", "variable", "50").json()["id"]
+
+    def in_g(name, gid, weight):
+        return client.post(
+            f"{BASE}/assets",
+            headers=auth_headers,
+            json={"name": name, "asset_class": "variable", "kind": "etf",
+                  "weight": weight, "group_id": gid},
+        )
+
+    assert in_g("a", g1, "100").status_code == 201
+    # g2 tiene su propio 100%: un activo al 100% cabe aunque g1 esté lleno.
+    assert in_g("b", g2, "100").status_code == 201
+
+
+def test_editing_weight_excludes_self(client: TestClient, auth_headers: dict[str, str]) -> None:
+    # Un solo activo al 60%: subirlo al 90% debe caber (no cuenta consigo mismo).
+    aid = _asset(client, auth_headers, "A", "variable", "etf", "60").json()["id"]
+    r = client.patch(f"{BASE}/assets/{aid}", headers=auth_headers, json={"weight": "90"})
+    assert r.status_code == 200
+    assert r.json()["weight"] == "90.00"
+
+
 def test_contribution_creates_movement_and_marks_done(
     client: TestClient, auth_headers: dict[str, str], seed_categories: None
 ) -> None:
