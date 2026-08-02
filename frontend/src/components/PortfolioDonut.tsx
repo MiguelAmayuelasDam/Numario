@@ -2,9 +2,8 @@ import { useMemo, useState } from "react"
 
 import type { Asset, InvestmentGroup } from "@/lib/api"
 
-// Paleta categórica (tokens en index.css, validados con la skill dataviz). Un
-// color por grupo, en orden fijo. Los activos de un grupo comparten color y se
-// distinguen por el hueco de 2px entre porciones y por la leyenda.
+// Paleta categórica (tokens en index.css, validados con la skill dataviz), en su
+// orden fijo CVD-seguro. Cada activo lleva **su propio color**.
 const SERIES = [
   "var(--series-1)",
   "var(--series-2)",
@@ -14,6 +13,20 @@ const SERIES = [
   "var(--series-6)",
   "var(--series-7)",
 ]
+
+/**
+ * Color distinto para el activo `i`. Con más activos que colores base, se generan
+ * variantes por niveles: los 7 hues base, luego una vuelta más clara y otra más
+ * oscura (color-mix), sin salir de la paleta. Activos consecutivos siempre usan
+ * hues distintos, así que nunca se tocan dos porciones iguales.
+ */
+function assetColor(i: number): string {
+  const base = SERIES[i % SERIES.length]
+  const tier = Math.floor(i / SERIES.length)
+  if (tier === 0) return base
+  if (tier % 2 === 1) return `color-mix(in oklch, ${base} 55%, white)`
+  return `color-mix(in oklch, ${base} 62%, black)`
+}
 
 interface Slice {
   assetId: string
@@ -40,8 +53,8 @@ function effectiveFraction(
 
 /**
  * Donut del reparto de la cartera: una porción por activo, del tamaño de su peso
- * efectivo sobre el total. El color identifica el grupo; la leyenda, cada activo
- * con su porcentaje (así el color nunca es el único identificador).
+ * efectivo sobre el total. **Cada activo con su propio color**, y la leyenda con
+ * su porcentaje (así el color nunca es el único identificador).
  *
  * Si los pesos no cubren el 100%, se añade una porción gris "sin asignar" — fiel
  * al modelo de pesos literales.
@@ -58,23 +71,13 @@ export function PortfolioDonut({
   const [hovered, setHovered] = useState<string | null>(null)
 
   const { slices, unassigned } = useMemo(() => {
-    // Un color por grupo (y uno por cada clase para los activos sueltos).
-    const colorKeys: string[] = []
-    const colorOf = (key: string): string => {
-      let i = colorKeys.indexOf(key)
-      if (i === -1) {
-        i = colorKeys.length
-        colorKeys.push(key)
-      }
-      return SERIES[i % SERIES.length]
-    }
+    // Un color distinto por activo (en el orden en que aparecen).
     const out: Slice[] = []
     let assigned = 0
     for (const asset of assets) {
       const fraction = effectiveFraction(asset, groups, variablePct)
       if (fraction <= 0) continue
-      const key = asset.group_id ?? `loose:${asset.asset_class}`
-      out.push({ assetId: asset.id, name: asset.name, fraction, color: colorOf(key) })
+      out.push({ assetId: asset.id, name: asset.name, fraction, color: assetColor(out.length) })
       assigned += fraction
     }
     return { slices: out, unassigned: Math.max(0, 1 - assigned) }
