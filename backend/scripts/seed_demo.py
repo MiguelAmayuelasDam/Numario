@@ -36,8 +36,18 @@ from app.services import (  # noqa: E402
     budget_service,
     emergency_fund_service,
     forecast_service,
+    investment_service,
 )
 from sqlalchemy import select  # noqa: E402
+
+# Cartera de demostración: unos activos con su peso, para que la pantalla
+# "Cartera" no salga vacía. (nombre, clase, tipo, peso dentro de su clase)
+ACTIVOS = [
+    ("ETF MSCI World", "variable", "etf", "55"),
+    ("ETF S&P 500", "variable", "etf", "30"),
+    ("Bitcoin", "variable", "cripto", "15"),
+    ("Fondo Renta Fija Europa", "fija", "fondo", "100"),
+]
 
 DEMO_EMAIL = "mouredev@gmail.com"
 DEMO_NICK = "mouredev"
@@ -203,6 +213,14 @@ def main() -> None:
         # Colchón: 6 meses × 1.600 €/mes = 9.600 € de objetivo.
         budget_service.set_emergency_months(db, user, 6)
         budget_service.set_emergency_monthly_need(db, user, Decimal("1600"))
+
+        # Cartera: reparto 85/15 y unos activos (sin aportaciones: la pantalla
+        # muestra el reparto calculado y el usuario marca lo que quiera en la demo).
+        investment_service.set_allocation(db, user, variable_pct=85, fixed_pct=15)
+        for nombre, clase, tipo, peso in ACTIVOS:
+            investment_service.create_asset(
+                db, user, name=nombre, asset_class=clase, kind=tipo, weight=Decimal(peso)
+            )
 
         cats = _categorias(db)
         hoy = date.today()
