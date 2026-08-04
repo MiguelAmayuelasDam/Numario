@@ -190,19 +190,16 @@ export interface Asset {
 export interface InvestmentGroup {
   id: string
   name: string
-  asset_class: AssetClass
-  weight: string
+  weight: string // % del total (grupos + activos sueltos suman 100)
+  variable_pct: string // split interno del grupo (suman 100)
+  fixed_pct: string
 }
 
 export interface GroupInput {
   name: string
-  asset_class: AssetClass
   weight: string
-}
-
-export interface InvestmentAllocation {
-  variable_pct: number
-  fixed_pct: number
+  variable_pct: string
+  fixed_pct: string
 }
 
 export interface MonthAsset {
@@ -210,6 +207,15 @@ export interface MonthAsset {
   planned: string // lo que le tocaría según el reparto
   contributed: string // lo aportado de verdad este mes
   done: boolean
+  total_contributed: string // acumulado de toda su historia
+}
+
+export interface Contribution {
+  id: string
+  asset_id: string | null
+  concept: string
+  amount: string
+  occurred_on: string
 }
 
 export interface AssetInput {
@@ -440,14 +446,6 @@ export const api = {
   },
 
   investment: {
-    getAllocation: (): Promise<InvestmentAllocation> =>
-      request<InvestmentAllocation>("/investment/allocation", { auth: true }),
-    setAllocation: (variable_pct: number, fixed_pct: number): Promise<InvestmentAllocation> =>
-      request<InvestmentAllocation>("/investment/allocation", {
-        method: "PUT",
-        body: { variable_pct, fixed_pct },
-        auth: true,
-      }),
     listGroups: (): Promise<InvestmentGroup[]> =>
       request<InvestmentGroup[]>("/investment/groups", { auth: true }),
     createGroup: (input: GroupInput): Promise<InvestmentGroup> =>
@@ -473,10 +471,20 @@ export const api = {
         `/investment/month?year=${year}&month=${month}&total=${total}`,
         { auth: true },
       ),
-    contribute: (asset_id: string, amount: string, occurred_on?: string): Promise<Transaction> =>
+    history: (assetId?: string): Promise<Contribution[]> =>
+      request<Contribution[]>(
+        `/investment/history${assetId ? `?asset_id=${assetId}` : ""}`,
+        { auth: true },
+      ),
+    contribute: (
+      asset_id: string,
+      amount: string,
+      occurred_on?: string,
+      extra = false,
+    ): Promise<Transaction> =>
       request<Transaction>("/investment/contributions", {
         method: "POST",
-        body: { asset_id, amount, ...(occurred_on ? { occurred_on } : {}) },
+        body: { asset_id, amount, ...(occurred_on ? { occurred_on } : {}), ...(extra ? { extra: true } : {}) },
         auth: true,
       }),
     undoContribution: (asset_id: string, year: number, month: number): Promise<void> =>

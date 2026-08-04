@@ -1,20 +1,24 @@
 """Reparto de la aportación mensual entre los activos de la cartera.
 
 Lógica financiera pura (no toca BD ni HTTP): recibe el total a invertir y el árbol
-de la cartera (clases → grupos opcionales → activos), y devuelve cuántos euros van
-a cada activo.
+de la cartera (grupos con su split → activos), y devuelve cuántos euros van a cada
+activo.
 
-**Tres niveles**, como una hoja de cálculo de asignación:
+    Total → Grupo (% del total, con su split var/fija) → Activo (% de su clase)
 
-    Total → Clase (variable/fija) → Grupo (opcional) → Activo
+Cada **grupo** pesa un % del total (los grupos y los activos sueltos suman 100).
+Dentro de un grupo, su dinero se parte según **su propio** split variable/fija, y
+cada mitad se reparte entre los activos de esa clase. Un activo **suelto** (sin
+grupo) pesa directamente sobre el total.
 
-Los pesos son **literales**: el peso de cada hijo es su porcentaje **de su padre**,
-no una proporción que se normaliza. Si dentro de un padre los pesos suman 100, se
-reparte todo; si suman menos (cartera a medias), el resto queda **sin asignar** —
-no se infla el único activo presente al 100%.
+Los pesos son **literales**: el peso de cada hijo es su % **de su padre**, no una
+proporción que se normaliza. Si dentro de un padre los pesos suman 100 se reparte
+todo; si suman menos (cartera a medias), el resto queda **sin asignar** — no se
+infla el único activo presente al 100%. Si por datos heredados suman **más** de
+100, el reparto se topa al 100% (proporcional) para no repartir más que el total.
 
-El reparto **cuadra al céntimo** con lo que sí está asignado: se usa el método del
-mayor resto para que los céntimos no se pierdan ni se dupliquen.
+El reparto **cuadra al céntimo** con lo asignado: método del mayor resto para que
+los céntimos no se pierdan ni se dupliquen.
 """
 
 from dataclasses import dataclass
@@ -25,17 +29,18 @@ CENT = Decimal("0.01")
 
 @dataclass(frozen=True)
 class GroupWeight:
-    """Un grupo dentro de una clase, con su peso (% de la clase)."""
+    """Un grupo: su peso (% del total) y su split interno entre clases."""
 
     group_id: str
-    asset_class: str  # "variable" | "fija"
     weight: Decimal
+    variable_pct: Decimal
+    fixed_pct: Decimal
 
 
 @dataclass(frozen=True)
 class AssetWeight:
-    """Un activo: su clase, su grupo (o None si cuelga directo de la clase) y su
-    peso (% de su padre: del grupo si lo tiene, si no de la clase)."""
+    """Un activo: su clase (etiqueta), su grupo (o None si es suelto) y su peso
+    (% de su clase dentro del grupo, o % del total si es suelto)."""
 
     asset_id: str
     asset_class: str
@@ -67,66 +72,67 @@ def _largest_remainder(cents: int, shares: dict[str, Decimal]) -> dict[str, int]
 def _distribute(parent_cents: int, weights: dict[str, Decimal]) -> dict[str, int]:
     """Reparte `parent_cents` entre hijos según pesos **literales** (% del padre).
 
-    Si los pesos suman 100 se reparte todo; si suman menos, solo se asigna esa
-    fracción y el resto se queda sin repartir. Cuadra al céntimo con lo asignado.
+    Si los pesos suman 100 se reparte todo; si suman menos, solo esa fracción y el
+    resto queda sin repartir; si suman más de 100, se topa al 100% (proporcional)
+    para no repartir más que el padre. Cuadra al céntimo con lo asignado.
     """
     if not weights:
         return {}
     sum_w = sum(weights.values(), Decimal(0))
     if sum_w <= 0:
         return dict.fromkeys(weights, 0)
-    # Lo que de verdad se asigna: la fracción de los pesos presentes.
-    allocated = int((Decimal(parent_cents) * sum_w / 100).to_integral_value(rounding=ROUND_HALF_UP))
+    # Lo que de verdad se asigna: la fracción de los pesos presentes, topada al 100%.
+    capped = min(sum_w, Decimal(100))
+    allocated = int(
+        (Decimal(parent_cents) * capped / 100).to_integral_value(rounding=ROUND_HALF_UP)
+    )
     fractions = {k: w / sum_w for k, w in weights.items()}
     return _largest_remainder(allocated, fractions)
 
 
 def compute_plan(
     total: Decimal,
-    variable_pct: int,
-    fixed_pct: int,
     groups: list[GroupWeight],
     assets: list[AssetWeight],
 ) -> dict[str, Decimal]:
-    """Euros por activo para una aportación de `total`, en tres niveles.
+    """Euros por activo para una aportación de `total`.
 
-    Nivel 1: el total se parte entre clases (variable/fija). Nivel 2: dentro de
-    cada clase, entre sus grupos y sus activos sueltos (los que no tienen grupo).
-    Nivel 3: dentro de cada grupo, entre sus activos. Pesos literales en todos.
+    Nivel 1: el total se parte entre los grupos y los activos sueltos, por su peso
+    (% del total). Nivel 2: el dinero de cada grupo se parte por su split
+    variable/fija. Nivel 3: dentro de cada clase del grupo, entre sus activos.
+    Pesos literales en todos.
     """
     if total < 0:
         raise ValueError("El total a invertir no puede ser negativo")
 
     result: dict[str, Decimal] = {a.asset_id: Decimal("0.00") for a in assets}
     if not assets:
-        return {} if not result else result
+        return {}
 
     total_cents = int((total / CENT).to_integral_value())
+    loose = [a for a in assets if a.group_id is None]
 
-    # Nivel 1 · clases. variable_pct + fixed_pct = 100, así que cuadra con el total.
-    class_cents = _distribute(
-        total_cents, {"variable": Decimal(variable_pct), "fija": Decimal(fixed_pct)}
-    )
+    # Nivel 1 · lo de más alto nivel: grupos + activos sueltos, por su peso del total.
+    top: dict[str, Decimal] = {f"g:{g.group_id}": g.weight for g in groups}
+    top.update({f"a:{a.asset_id}": a.weight for a in loose})
+    top_cents = _distribute(total_cents, top)
 
-    for cls in ("variable", "fija"):
-        cc = class_cents.get(cls, 0)
-        groups_in = [g for g in groups if g.asset_class == cls]
-        loose = [a for a in assets if a.asset_class == cls and a.group_id is None]
+    for a in loose:
+        result[a.asset_id] = Decimal(top_cents.get(f"a:{a.asset_id}", 0)) * CENT
 
-        # Nivel 2 · hijos de la clase: grupos + activos sueltos, con su peso.
-        children: dict[str, Decimal] = {f"g:{g.group_id}": g.weight for g in groups_in}
-        children.update({f"a:{a.asset_id}": a.weight for a in loose})
-        child_cents = _distribute(cc, children)
-
-        for a in loose:
-            result[a.asset_id] = Decimal(child_cents.get(f"a:{a.asset_id}", 0)) * CENT
-
-        # Nivel 3 · dentro de cada grupo, entre sus activos.
-        for g in groups_in:
-            gc = child_cents.get(f"g:{g.group_id}", 0)
-            grp_assets = [a for a in assets if a.group_id == g.group_id]
-            asset_cents = _distribute(gc, {a.asset_id: a.weight for a in grp_assets})
-            for a in grp_assets:
+    for g in groups:
+        gc = top_cents.get(f"g:{g.group_id}", 0)
+        # Nivel 2 · el dinero del grupo se parte por su split var/fija (suman 100).
+        class_cents = _distribute(gc, {"variable": g.variable_pct, "fija": g.fixed_pct})
+        # Nivel 3 · dentro de cada clase del grupo, entre sus activos.
+        for cls in ("variable", "fija"):
+            cls_assets = [
+                a for a in assets if a.group_id == g.group_id and a.asset_class == cls
+            ]
+            asset_cents = _distribute(
+                class_cents.get(cls, 0), {a.asset_id: a.weight for a in cls_assets}
+            )
+            for a in cls_assets:
                 result[a.asset_id] = Decimal(asset_cents.get(a.asset_id, 0)) * CENT
 
     return result

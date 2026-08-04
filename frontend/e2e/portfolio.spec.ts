@@ -46,7 +46,7 @@ test("cartera: crear activos, calcular el reparto y aportar", async ({ page }) =
 
   // Marcar el primero como hecho.
   await page.getByRole("button", { name: /Marcar ETF World/ }).click()
-  await expect(page.getByText("aportado")).toBeVisible()
+  await expect(page.getByText("aportado", { exact: true })).toBeVisible()
 
   // La aportación aparece en Movimientos como traspaso.
   await page.getByRole("link", { name: "Movimientos" }).click()

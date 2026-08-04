@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react"
 
-import type { Asset, InvestmentGroup } from "@/lib/api"
-
 // Paleta categórica (tokens en index.css, validados con la skill dataviz), en su
 // orden fijo CVD-seguro. Cada activo lleva **su propio color**.
 const SERIES = [
@@ -28,60 +26,46 @@ function assetColor(i: number): string {
   return `color-mix(in oklch, ${base} 62%, black)`
 }
 
-interface Slice {
-  assetId: string
+export interface DonutItem {
+  id: string
   name: string
-  fraction: number // % del total (0..1)
+  fraction: number // parte del total (0..1)
+}
+
+interface Slice {
+  id: string
+  name: string
+  fraction: number
   color: string
 }
 
-/** Peso efectivo de un activo sobre el total: clase × grupo × activo (literal). */
-function effectiveFraction(
-  asset: Asset,
-  groups: InvestmentGroup[],
-  variablePct: number,
-): number {
-  const classFrac = (asset.asset_class === "variable" ? variablePct : 100 - variablePct) / 100
-  const assetFrac = Number(asset.weight) / 100
-  if (asset.group_id) {
-    const group = groups.find((g) => g.id === asset.group_id)
-    const groupFrac = group ? Number(group.weight) / 100 : 0
-    return classFrac * groupFrac * assetFrac
-  }
-  return classFrac * assetFrac
-}
-
 /**
- * Donut del reparto de la cartera: una porción por activo, del tamaño de su peso
- * efectivo sobre el total. **Cada activo con su propio color**, y la leyenda con
- * su porcentaje (así el color nunca es el único identificador).
+ * Donut genérico: una porción por ítem, del tamaño de su fracción del total.
+ * **Cada ítem con su propio color**, y la leyenda con su porcentaje (así el color
+ * nunca es el único identificador).
  *
- * Si los pesos no cubren el 100%, se añade una porción gris "sin asignar" — fiel
- * al modelo de pesos literales.
+ * Si las fracciones no cubren el 100% y se pasa `unassignedLabel`, se añade una
+ * porción gris con lo que falta (p. ej. "Sin asignar" en el reparto de la cartera).
  */
 export function PortfolioDonut({
-  assets,
-  groups,
-  variablePct,
+  items,
+  unassignedLabel,
 }: {
-  assets: Asset[]
-  groups: InvestmentGroup[]
-  variablePct: number
+  items: DonutItem[]
+  unassignedLabel?: string
 }) {
   const [hovered, setHovered] = useState<string | null>(null)
 
   const { slices, unassigned } = useMemo(() => {
-    // Un color distinto por activo (en el orden en que aparecen).
     const out: Slice[] = []
     let assigned = 0
-    for (const asset of assets) {
-      const fraction = effectiveFraction(asset, groups, variablePct)
-      if (fraction <= 0) continue
-      out.push({ assetId: asset.id, name: asset.name, fraction, color: assetColor(out.length) })
-      assigned += fraction
+    for (const item of items) {
+      if (item.fraction <= 0) continue
+      out.push({ id: item.id, name: item.name, fraction: item.fraction, color: assetColor(out.length) })
+      assigned += item.fraction
     }
     return { slices: out, unassigned: Math.max(0, 1 - assigned) }
-  }, [assets, groups, variablePct])
+  }, [items])
 
   if (slices.length === 0) return null
 
@@ -91,9 +75,10 @@ export function PortfolioDonut({
   const c = 2 * Math.PI * r
   const gap = 2 // px de hueco entre porciones (separa las del mismo color)
 
-  const segments = [...slices, ...(unassigned > 0.0001
-    ? [{ assetId: "unset", name: "Sin asignar", fraction: unassigned, color: "var(--series-unset)" }]
-    : [])]
+  const segments =
+    unassignedLabel && unassigned > 0.0001
+      ? [...slices, { id: "unset", name: unassignedLabel, fraction: unassigned, color: "var(--series-unset)" }]
+      : slices
 
   let offset = 0
 
@@ -111,14 +96,14 @@ export function PortfolioDonut({
             const dash = Math.max(0, len - gap)
             const seg = (
               <circle
-                key={s.assetId}
+                key={s.id}
                 cx={size / 2}
                 cy={size / 2}
                 r={r}
                 stroke={s.color}
                 strokeDasharray={`${dash} ${c - dash}`}
                 strokeDashoffset={-offset}
-                opacity={hovered && hovered !== s.assetId ? 0.35 : 1}
+                opacity={hovered && hovered !== s.id ? 0.35 : 1}
                 style={{ transition: "opacity 0.15s" }}
               />
             )
@@ -131,15 +116,12 @@ export function PortfolioDonut({
       <ul className="min-w-0 flex-1 space-y-1 text-sm">
         {segments.map((s) => (
           <li
-            key={s.assetId}
+            key={s.id}
             className="flex items-center gap-2"
-            onMouseEnter={() => setHovered(s.assetId)}
+            onMouseEnter={() => setHovered(s.id)}
             onMouseLeave={() => setHovered(null)}
           >
-            <span
-              className="size-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: s.color }}
-            />
+            <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
             <span className="min-w-0 flex-1 truncate">{s.name}</span>
             <span className="shrink-0 font-medium tabular-nums text-muted-foreground">
               {(s.fraction * 100).toFixed(1)}%

@@ -1,10 +1,15 @@
 """Modelo Asset (activo de inversión de la cartera del usuario).
 
 Un activo es algo que genera valor económico: un ETF, un fondo, una acción,
-cripto o renta fija. El reparto tiene **tres niveles**: la clase (variable/fija,
-en `InvestmentAllocation`), un **grupo opcional** dentro de la clase
-(`InvestmentGroup`), y el activo. El `weight` es el peso **de su padre**: del
-grupo si lo tiene (`group_id`), o de la clase si cuelga directo.
+cripto o renta fija. El reparto va de arriba abajo:
+
+    Total → Grupo (% del total, con su split var/fija) → Activo (% de su clase)
+
+Un activo **cuelga de un grupo** (`group_id`) y su `weight` es el peso dentro de
+**su clase dentro del grupo** (los de renta variable de un grupo suman 100, y los
+de renta fija otro 100). Si no tiene grupo (`group_id` NULL), es un activo
+**suelto** y su `weight` es directamente su % **del total**. `asset_class` es una
+**etiqueta** (variable/fija): dice de qué lado del split del grupo tira el activo.
 
 No guarda ni valor de mercado ni rentabilidad: eso el usuario lo sigue en su
 bróker (decisión de alcance). Aquí solo se planifican y registran las
@@ -21,7 +26,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
 # Clase del activo: cómo se comporta el riesgo. El split entre las dos lo fija
-# InvestmentAllocation.
+# cada grupo (InvestmentGroup.variable_pct / fixed_pct).
 ASSET_CLASSES = ("variable", "fija")
 # Tipo concreto, solo informativo/para agrupar en la interfaz.
 ASSET_KINDS = ("etf", "fondo", "accion", "cripto", "otro")
@@ -37,12 +42,13 @@ class Asset(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     asset_class: Mapped[str] = mapped_column(String(10), nullable=False)  # variable | fija
     kind: Mapped[str] = mapped_column(String(10), nullable=False)  # etf | fondo | ...
-    # Grupo opcional dentro de la clase. Si es NULL, el activo cuelga directo de
-    # la clase. SET NULL: al borrar el grupo, el activo pasa a suelto.
+    # Grupo del activo. Si es NULL, el activo es **suelto** y pesa sobre el total.
+    # SET NULL: al borrar el grupo, el activo pasa a suelto.
     group_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("investment_groups.id", ondelete="SET NULL"), index=True, nullable=True
     )
-    # Peso objetivo **dentro de su padre** (grupo o clase); los hermanos suman 100.
+    # Peso objetivo: % de su clase dentro del grupo (si tiene grupo) o % del total
+    # (si es suelto). Los hermanos del mismo padre y clase suman 100.
     weight: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False, default=Decimal(0))
     # Archivar sin borrar: conserva el histórico de aportaciones (asset_id) intacto.
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

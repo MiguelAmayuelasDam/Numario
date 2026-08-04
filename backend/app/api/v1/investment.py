@@ -11,12 +11,11 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.investment import (
-    AllocationRead,
-    AllocationUpdate,
     AssetCreate,
     AssetRead,
     AssetUpdate,
     ContributionCreate,
+    ContributionRead,
     GroupCreate,
     GroupRead,
     GroupUpdate,
@@ -38,27 +37,19 @@ _GROUP_NOT_FOUND = HTTPException(
 )
 
 
-def _weight_error(err: WeightExceededError) -> HTTPException:
-    return HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail=f"Los pesos superarían el 100%. Quedan {err.room}% libres.",
-    )
-
-
-# ── Reparto entre clases ────────────────────────────────────────────────────
-
-@router.get("/allocation", response_model=AllocationRead)
-def get_allocation(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    return investment_service.get_allocation(db, user)
-
-
-@router.put("/allocation", response_model=AllocationRead)
-def set_allocation(
-    payload: AllocationUpdate,
-    user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return investment_service.set_allocation(db, user, payload.variable_pct, payload.fixed_pct)
+def _weight_error(err: WeightExceededError, *, scope: str = "asset") -> HTTPException:
+    # El margen nunca se muestra negativo (datos heredados podrían dejarlo <0).
+    room = err.room if err.room > 0 else Decimal(0)
+    if scope == "group":
+        # Aclara que es el peso **sobre el total** (grupos + sueltos), no el split
+        # variable/fija del grupo, que es independiente y sí suma 100.
+        detail = (
+            f"Los pesos sobre el total (grupos y activos sueltos) superarían el 100%. "
+            f"Queda {room}% libre; reduce el peso de otro grupo para hacer sitio."
+        )
+    else:
+        detail = f"Los pesos superarían el 100%. Quedan {room}% libres."
+    return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
 
 
 # ── Grupos ──────────────────────────────────────────────────────────────────
@@ -76,10 +67,15 @@ def create_group(
 ):
     try:
         return investment_service.create_group(
-            db, user, name=payload.name, asset_class=payload.asset_class, weight=payload.weight
+            db,
+            user,
+            name=payload.name,
+            weight=payload.weight,
+            variable_pct=payload.variable_pct,
+            fixed_pct=payload.fixed_pct,
         )
     except WeightExceededError as err:
-        raise _weight_error(err) from None
+        raise _weight_error(err, scope="group") from None
 
 
 @router.patch("/groups/{group_id}", response_model=GroupRead)
@@ -96,7 +92,7 @@ def update_group(
     except GroupNotFoundError:
         raise _GROUP_NOT_FOUND from None
     except WeightExceededError as err:
-        raise _weight_error(err) from None
+        raise _weight_error(err, scope="group") from None
 
 
 @router.delete("/groups/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -192,6 +188,16 @@ def month_status(
     return investment_service.month_status(db, user, year, month, total)
 
 
+@router.get("/history", response_model=list[ContributionRead])
+def contribution_history(
+    asset_id: uuid.UUID | None = Query(default=None),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Histórico de aportaciones (todas, o las de un activo), de reciente a antiguo."""
+    return investment_service.list_contributions(db, user, asset_id)
+
+
 @router.post(
     "/contributions", response_model=TransactionRead, status_code=status.HTTP_201_CREATED
 )
@@ -204,7 +210,7 @@ def record_contribution(
     occurred = payload.occurred_on or date.today()
     try:
         return investment_service.record_contribution(
-            db, user, payload.asset_id, payload.amount, occurred
+            db, user, payload.asset_id, payload.amount, occurred, payload.extra
         )
     except AssetNotFoundError:
         raise _NOT_FOUND from None

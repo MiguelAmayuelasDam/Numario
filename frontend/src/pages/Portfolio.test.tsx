@@ -20,15 +20,23 @@ const asset = (id: string, name: string, cls: string, weight: string, group: str
 })
 
 const MONTH = [
-  { asset: asset("1", "ETF World", "variable", "60"), planned: "480.00", contributed: "0.00", done: false },
-  { asset: asset("2", "ETF SP", "variable", "40"), planned: "320.00", contributed: "0.00", done: false },
-  { asset: asset("3", "Fondo RF", "fija", "100"), planned: "200.00", contributed: "0.00", done: false },
+  { asset: asset("1", "ETF World", "variable", "60"), planned: "480.00", contributed: "0.00", done: false, total_contributed: "0.00" },
+  { asset: asset("2", "ETF SP", "variable", "40"), planned: "320.00", contributed: "0.00", done: false, total_contributed: "0.00" },
+  { asset: asset("3", "Fondo RF", "fija", "100"), planned: "200.00", contributed: "0.00", done: false, total_contributed: "0.00" },
 ]
+
+const group = (id: string, name: string, weight: string, variable_pct = "100", fixed_pct = "0") => ({
+  id,
+  name,
+  weight,
+  variable_pct,
+  fixed_pct,
+})
 
 function installFetch(month = MONTH, groups: unknown[] = []) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-    if (url.includes("/investment/allocation")) return json(200, { variable_pct: 80, fixed_pct: 20 })
     if (url.includes("/investment/groups")) return json(200, groups)
+    if (url.includes("/investment/history")) return json(200, [])
     if (url.includes("/investment/month")) return json(200, month)
     if (url.includes("/investment/contributions") && init?.method === "POST")
       return json(201, { id: "t1", amount: "480.00", type: "transfer" })
@@ -87,7 +95,7 @@ describe("Portfolio", () => {
 
   it("un activo ya aportado sale marcado y con 'aportado'", async () => {
     installFetch([
-      { asset: asset("1", "ETF World", "variable", "60"), planned: "480.00", contributed: "480.00", done: true },
+      { asset: asset("1", "ETF World", "variable", "60"), planned: "480.00", contributed: "480.00", done: true, total_contributed: "480.00" },
     ])
     renderPage()
 
@@ -103,31 +111,31 @@ describe("Portfolio", () => {
   })
 
   it("pinta los activos bajo la cabecera de su grupo", async () => {
-    const groups = [{ id: "g1", name: "Crecimiento", asset_class: "variable", weight: "70" }]
+    const groups = [group("g1", "Interactive Brokers", "100", "90", "10")]
     const month = [
-      { asset: asset("1", "SXR8", "variable", "30", "g1"), planned: "189.00", contributed: "0.00", done: false },
+      { asset: asset("1", "SXR8", "variable", "21", "g1"), planned: "189.00", contributed: "0.00", done: false, total_contributed: "0.00" },
     ]
     installFetch(month, groups)
     renderPage()
 
-    expect(await screen.findByText("Crecimiento")).toBeInTheDocument()
+    expect(await screen.findByText("Interactive Brokers")).toBeInTheDocument()
     // SXR8 aparece en la lista del grupo y en la leyenda del donut.
     expect(screen.getAllByText("SXR8").length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText("189,00 €")).toBeInTheDocument()
   })
 
   it("el donut muestra el peso efectivo de cada activo", async () => {
-    const groups = [{ id: "g1", name: "Crecimiento", asset_class: "variable", weight: "50" }]
-    // 80% variable · grupo 50% · activo 100% → efectivo 40% del total.
+    // Grupo al 60% del total, split 100/0, activo al 100% → efectivo 60% del total.
+    const groups = [group("g1", "IB", "60", "100", "0")]
     const month = [
-      { asset: asset("1", "SXR8", "variable", "100", "g1"), planned: "0.00", contributed: "0.00", done: false },
+      { asset: asset("1", "SXR8", "variable", "100", "g1"), planned: "0.00", contributed: "0.00", done: false, total_contributed: "0.00" },
     ]
     installFetch(month, groups)
     renderPage()
 
     await screen.findByText("Reparto por activo")
-    expect(screen.getByText("40.0%")).toBeInTheDocument()
-    // El 60% restante queda sin asignar.
+    expect(screen.getByText("60.0%")).toBeInTheDocument()
+    // El 40% restante queda sin asignar.
     expect(screen.getByText("Sin asignar")).toBeInTheDocument()
   })
 })

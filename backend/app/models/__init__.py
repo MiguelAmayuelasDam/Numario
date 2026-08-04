@@ -10,7 +10,6 @@ from app.models.category import Category
 from app.models.category_forecast import CategoryForecast
 from app.models.classification_rule import ClassificationRule
 from app.models.emergency_fund_contribution import EmergencyFundContribution
-from app.models.investment_allocation import InvestmentAllocation
 from app.models.investment_group import InvestmentGroup
 from app.models.monthly_income import MonthlyIncome
 from app.models.refresh_token import RefreshToken
@@ -24,7 +23,6 @@ __all__ = [
     "CategoryForecast",
     "ClassificationRule",
     "EmergencyFundContribution",
-    "InvestmentAllocation",
     "InvestmentGroup",
     "MonthlyIncome",
     "RefreshToken",
