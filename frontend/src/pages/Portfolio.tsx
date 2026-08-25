@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -47,11 +48,6 @@ const KIND_LABEL: Record<AssetKind, string> = {
 }
 const NO_GROUP = "none"
 const CLASSES: AssetClass[] = ["variable", "fija"]
-
-function monthKey(): { year: number; month: number } {
-  const now = new Date()
-  return { year: now.getFullYear(), month: now.getMonth() + 1 }
-}
 
 /** Redondea a 2 decimales (para mostrar euros/porcentajes al usuario). */
 function round2(n: number): number {
@@ -207,10 +203,15 @@ function SplitSlider({
 }
 
 export default function Portfolio() {
-  const { year, month } = useMemo(monthKey, [])
   const [rows, setRows] = useState<MonthAsset[]>([])
   const [groups, setGroups] = useState<InvestmentGroup[]>([])
   const [total, setTotal] = useState("")
+  // La cartera es **por día**: el estado (previsto/aportado/hecho) y el registro se
+  // refieren a esta fecha. Por defecto hoy; se puede elegir cualquier día (pasado
+  // o futuro).
+  const [date, setDate] = useState(todayISO())
+  // Días con alguna aportación, para marcarlos en el calendario.
+  const [markedDates, setMarkedDates] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -220,59 +221,73 @@ export default function Portfolio() {
   const [editingGroup, setEditingGroup] = useState<InvestmentGroup | null>(null)
   const [contribDialog, setContribDialog] = useState(false)
 
-  // El total se lee por ref para que recargar la estructura NO dependa de él: si
-  // dependiera, cada tecla recrearía `load`, dispararía el spinner y desmontaría
-  // el input de "a invertir" (que perdía el foco a cada pulsación).
+  // El total y la fecha se leen por ref para que recargar la estructura NO dependa
+  // de ellos: si dependiera, cada tecla recrearía `load`, dispararía el spinner y
+  // desmontaría el input de "a invertir" (que perdía el foco a cada pulsación).
   const totalRef = useRef(total)
   totalRef.current = total
+  const dateRef = useRef(date)
+  dateRef.current = date
 
-  const load = useCallback(
-    async (spinner = false) => {
-      if (spinner) setLoading(true)
-      try {
-        const [grps, monthRows] = await Promise.all([
-          api.investment.listGroups(),
-          api.investment.month(year, month, totalRef.current || "0"),
-        ])
-        setGroups(grps)
-        setRows(monthRows)
-      } catch (err) {
-        setError(err instanceof ApiError ? err.message : "No se pudo cargar la cartera")
-      } finally {
-        if (spinner) setLoading(false)
-      }
-    },
-    [year, month],
-  )
+  const load = useCallback(async (spinner = false) => {
+    if (spinner) setLoading(true)
+    try {
+      const [grps, statusRows, dates] = await Promise.all([
+        api.investment.listGroups(),
+        api.investment.status(dateRef.current, totalRef.current || "0"),
+        api.investment.contributionDates(),
+      ])
+      setGroups(grps)
+      setRows(statusRows)
+      setMarkedDates(new Set(dates))
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo cargar la cartera")
+    } finally {
+      if (spinner) setLoading(false)
+    }
+  }, [])
 
   // Carga inicial (con spinner).
   useEffect(() => {
     void load(true)
   }, [load])
 
-  // Al cambiar el total, solo se recalcula el reparto (los importes), sin spinner
-  // y con un pequeño retardo, para no desmontar nada ni machacar la API.
+  // Al cambiar el total o la fecha, se recalcula el estado del día (importes/hecho),
+  // sin spinner. Además, al **cambiar de día**, si ese día ya tiene aportaciones se
+  // precarga "A invertir" con lo que se destinó (para que aparezca al revisarlo).
+  const prevDate = useRef(date)
   useEffect(() => {
-    const id = setTimeout(() => {
-      api.investment
-        .month(year, month, total || "0")
-        .then(setRows)
-        .catch(() => {})
-    }, 250)
+    const dateChanged = prevDate.current !== date
+    prevDate.current = date
+    const id = setTimeout(
+      () => {
+        api.investment
+          .status(date, total || "0")
+          .then((r) => {
+            setRows(r)
+            if (dateChanged) {
+              const invested = r.reduce((s, x) => s + Number(x.contributed), 0)
+              if (invested > 0) setTotal(String(round2(invested)))
+            }
+          })
+          .catch(() => {})
+      },
+      dateChanged ? 0 : 250,
+    )
     return () => clearTimeout(id)
-  }, [total, year, month])
+  }, [total, date])
 
   const toggleDone = async (row: MonthAsset) => {
     setError(null)
     try {
       if (row.done) {
-        await api.investment.undoContribution(row.asset.id, year, month)
+        await api.investment.undoContribution(row.asset.id, date)
       } else {
         if (Number(row.planned) <= 0) {
-          setError("Indica cuánto vas a invertir este mes para calcular el reparto")
+          setError("Indica cuánto vas a invertir para calcular el reparto")
           return
         }
-        await api.investment.contribute(row.asset.id, row.planned, todayISO())
+        await api.investment.contribute(row.asset.id, row.planned, date)
       }
       await load()
     } catch (err) {
@@ -376,11 +391,21 @@ export default function Portfolio() {
         </div>
       ) : (
         <>
-          {/* Calculadora del mes */}
+          {/* Calculadora del día: fecha + total a repartir */}
           <section className="mb-4 rounded-lg border p-4">
             <div className="flex flex-wrap items-end gap-3">
-              <div className="flex-1 space-y-1">
-                <Label htmlFor="total">A invertir este mes (€)</Label>
+              <div className="space-y-1">
+                <Label>Fecha</Label>
+                <DatePicker
+                  value={date}
+                  onChange={setDate}
+                  placeholder="Elige una fecha"
+                  aria-label="Fecha"
+                  marked={markedDates}
+                />
+              </div>
+              <div className="min-w-40 flex-1 space-y-1">
+                <Label htmlFor="total">A invertir (€)</Label>
                 <Input
                   id="total"
                   type="number"
@@ -401,6 +426,10 @@ export default function Portfolio() {
                 · {doneCount}/{rows.length} hecho
               </p>
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              El estado (previsto, aportado, hecho) es el de esta fecha. Cambia el día para ver o
+              registrar aportaciones de otra fecha, pasada o futura.
+            </p>
           </section>
 
           {/* Gráfico del reparto por activo */}
@@ -542,6 +571,7 @@ export default function Portfolio() {
         open={contribDialog}
         groups={groups}
         assets={assets}
+        defaultDate={date}
         onOpenChange={setContribDialog}
         onSaved={() => {
           setContribDialog(false)

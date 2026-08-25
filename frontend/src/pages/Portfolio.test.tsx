@@ -36,8 +36,9 @@ const group = (id: string, name: string, weight: string, variable_pct = "100", f
 function installFetch(month = MONTH, groups: unknown[] = []) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url.includes("/investment/groups")) return json(200, groups)
+    if (url.includes("/investment/contribution-dates")) return json(200, [])
     if (url.includes("/investment/history")) return json(200, [])
-    if (url.includes("/investment/month")) return json(200, month)
+    if (url.includes("/investment/status")) return json(200, month)
     if (url.includes("/investment/contributions") && init?.method === "POST")
       return json(201, { id: "t1", amount: "480.00", type: "transfer" })
     return json(404, {})

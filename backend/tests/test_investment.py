@@ -72,7 +72,7 @@ def test_month_plan_splits_by_weight(client: TestClient, auth_headers: dict[str,
     _in_group(client, auth_headers, "ETF SP", gid, "variable", "40")
     _in_group(client, auth_headers, "Fondo RF", gid, "fija", "100")
 
-    month = client.get(f"{BASE}/month?year=2026&month=7&total=1000", headers=auth_headers).json()
+    month = client.get(f"{BASE}/status?on=2026-07-10&total=1000", headers=auth_headers).json()
     planned = {m["asset"]["name"]: m["planned"] for m in month}
     assert planned == {"ETF World": "420.00", "ETF SP": "280.00", "Fondo RF": "300.00"}
     assert all(m["done"] is False for m in month)
@@ -87,7 +87,7 @@ def test_group_split_plan_matches_excel(client: TestClient, auth_headers: dict[s
     _in_group(client, auth_headers, "VDTA", gid, "fija", "50")
     _in_group(client, auth_headers, "IEAC", gid, "fija", "50")
 
-    month = client.get(f"{BASE}/month?year=2026&month=8&total=1000", headers=auth_headers).json()
+    month = client.get(f"{BASE}/status?on=2026-08-10&total=1000", headers=auth_headers).json()
     planned = {m["asset"]["name"]: m["planned"] for m in month}
     assert planned["SXR8"] == "189.00"  # 1000 × 100% × 90% × 21%
     assert planned["IWDA"] == "126.00"  # × 14%
@@ -186,8 +186,8 @@ def test_contribution_creates_movement_and_marks_done(
     txs = client.get("/api/v1/transactions", headers=auth_headers).json()
     assert any(t["amount"] == "300.00" for t in txs)
 
-    # Y el activo queda marcado como hecho ese mes.
-    month = client.get(f"{BASE}/month?year=2026&month=7&total=1000", headers=auth_headers).json()
+    # Y el activo queda marcado como hecho ese día.
+    month = client.get(f"{BASE}/status?on=2026-07-10&total=1000", headers=auth_headers).json()
     mine = next(m for m in month if m["asset"]["id"] == asset_id)
     assert mine["done"] is True
     assert mine["contributed"] == "300.00"
@@ -232,12 +232,51 @@ def test_undo_contribution(
     )
 
     r = client.delete(
-        f"{BASE}/contributions?asset_id={asset_id}&year=2026&month=7", headers=auth_headers
+        f"{BASE}/contributions?asset_id={asset_id}&on=2026-07-10", headers=auth_headers
     )
     assert r.status_code == 204
 
-    month = client.get(f"{BASE}/month?year=2026&month=7&total=1000", headers=auth_headers).json()
+    month = client.get(f"{BASE}/status?on=2026-07-10&total=1000", headers=auth_headers).json()
     assert next(m for m in month if m["asset"]["id"] == asset_id)["done"] is False
+
+
+def test_status_is_per_day(
+    client: TestClient, auth_headers: dict[str, str], seed_categories: None
+) -> None:
+    """El estado (hecho/aportado) es del día elegido, no del mes; pero el total
+    acumulado del activo se mantiene entre días."""
+    asset_id = _asset(client, auth_headers).json()["id"]
+    client.post(
+        f"{BASE}/contributions",
+        headers=auth_headers,
+        json={"asset_id": asset_id, "amount": "300.00", "occurred_on": "2026-05-10"},
+    )
+    # Ese día sale hecho, con lo aportado.
+    day = client.get(f"{BASE}/status?on=2026-05-10&total=1000", headers=auth_headers).json()
+    mine = next(m for m in day if m["asset"]["id"] == asset_id)
+    assert mine["done"] is True
+    assert mine["contributed"] == "300.00"
+    # Otro día distinto: sin hacer y sin aportado ese día, pero el acumulado sigue.
+    other = client.get(f"{BASE}/status?on=2026-06-10&total=1000", headers=auth_headers).json()
+    mine2 = next(m for m in other if m["asset"]["id"] == asset_id)
+    assert mine2["done"] is False
+    assert mine2["contributed"] == "0.00"
+    assert mine2["total_contributed"] == "300.00"
+
+
+def test_contribution_dates(
+    client: TestClient, auth_headers: dict[str, str], seed_categories: None
+) -> None:
+    asset_id = _asset(client, auth_headers).json()["id"]
+    for day in ("2026-05-15", "2026-05-15", "2026-06-10"):
+        client.post(
+            f"{BASE}/contributions",
+            headers=auth_headers,
+            json={"asset_id": asset_id, "amount": "50.00", "occurred_on": day},
+        )
+    # Fechas distintas y ordenadas, para marcar el calendario.
+    dates = client.get(f"{BASE}/contribution-dates", headers=auth_headers).json()
+    assert dates == ["2026-05-15", "2026-06-10"]
 
 
 def test_history_and_all_time_total(
@@ -261,8 +300,8 @@ def test_history_and_all_time_total(
     # Filtrado por activo.
     assert len(client.get(f"{BASE}/history?asset_id={asset_id}", headers=auth_headers).json()) == 2
 
-    # Julio: contributed = 300 (solo el mes), total_contributed = 400 (toda la historia).
-    month = client.get(f"{BASE}/month?year=2026&month=7&total=1000", headers=auth_headers).json()
+    # El 10/07: contributed = 300 (solo ese día), total_contributed = 400 (toda la historia).
+    month = client.get(f"{BASE}/status?on=2026-07-10&total=1000", headers=auth_headers).json()
     mine = next(m for m in month if m["asset"]["id"] == asset_id)
     assert mine["contributed"] == "300.00"
     assert mine["total_contributed"] == "400.00"

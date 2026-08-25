@@ -40,7 +40,7 @@ test("cartera: crear activos, calcular el reparto y aportar", async ({ page }) =
   await addAsset(page, "ETF SP500", "40")
 
   // Total 1000 → reparto 600 / 400 (100% variable por defecto).
-  await page.getByLabel("A invertir este mes (€)").fill("1000")
+  await page.getByLabel("A invertir (€)").fill("1000")
   await expect(page.getByText("600,00 €").first()).toBeVisible()
   await expect(page.getByText("400,00 €").first()).toBeVisible()
 

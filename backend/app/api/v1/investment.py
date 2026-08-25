@@ -175,17 +175,16 @@ def delete_asset(
 
 # ── Plan del mes y aportaciones ─────────────────────────────────────────────
 
-@router.get("/month", response_model=list[MonthAssetRead])
-def month_status(
-    year: int = Query(),
-    month: int = Query(ge=1, le=12),
+@router.get("/status", response_model=list[MonthAssetRead])
+def status_on(
+    on: date = Query(),
     total: Decimal = Query(default=Decimal(0), ge=0),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Reparto y estado del mes. `total` es lo que se piensa invertir (para el
-    cálculo); lo aportado de verdad sale de los movimientos."""
-    return investment_service.month_status(db, user, year, month, total)
+    """Reparto y estado de un día. `total` es lo que se piensa invertir (para el
+    cálculo); lo aportado de verdad ese día sale de los movimientos."""
+    return investment_service.status_on(db, user, on, total)
 
 
 @router.get("/history", response_model=list[ContributionRead])
@@ -196,6 +195,14 @@ def contribution_history(
 ):
     """Histórico de aportaciones (todas, o las de un activo), de reciente a antiguo."""
     return investment_service.list_contributions(db, user, asset_id)
+
+
+@router.get("/contribution-dates", response_model=list[date])
+def contribution_dates(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    """Fechas con alguna aportación (para marcarlas en el calendario)."""
+    return investment_service.contribution_dates(db, user)
 
 
 @router.post(
@@ -219,14 +226,13 @@ def record_contribution(
 @router.delete("/contributions", status_code=status.HTTP_204_NO_CONTENT)
 def undo_contributions(
     asset_id: uuid.UUID = Query(),
-    year: int = Query(),
-    month: int = Query(ge=1, le=12),
+    on: date = Query(),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Response:
-    """Desmarca: borra las aportaciones de un activo en un mes."""
+    """Desmarca: borra las aportaciones de un activo en un día."""
     try:
-        investment_service.undo_contributions(db, user, asset_id, year, month)
+        investment_service.undo_contributions(db, user, asset_id, on)
     except AssetNotFoundError:
         raise _NOT_FOUND from None
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -34,19 +35,21 @@ export function ContributionDialog({
   open,
   groups,
   assets,
+  defaultDate,
   onOpenChange,
   onSaved,
 }: {
   open: boolean
   groups: InvestmentGroup[]
   assets: Asset[]
+  defaultDate?: string
   onOpenChange: (v: boolean) => void
   onSaved: () => void
 }) {
   const [groupId, setGroupId] = useState<string>(NO_GROUP)
   const [assetId, setAssetId] = useState<string>("")
   const [amount, setAmount] = useState("")
-  const [date, setDate] = useState(todayISO())
+  const [date, setDate] = useState(defaultDate ?? todayISO())
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -59,9 +62,9 @@ export function ContributionDialog({
     if (!open) return
     setError(null)
     setAmount("")
-    setDate(todayISO())
+    setDate(defaultDate ?? todayISO())
     setGroupId(groups[0]?.id ?? (hasLoose ? NO_GROUP : ""))
-  }, [open, groups, hasLoose])
+  }, [open, groups, hasLoose, defaultDate])
 
   // Al cambiar el grupo (o al abrir), el activo salta al primero de ese grupo.
   useEffect(() => {
@@ -139,12 +142,13 @@ export function ContributionDialog({
               />
             </div>
             <div className="flex-1 space-y-1">
-              <Label htmlFor="contrib-date">Fecha</Label>
-              <Input
-                id="contrib-date"
-                type="date"
+              <Label>Fecha</Label>
+              <DatePicker
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={setDate}
+                placeholder="Elige una fecha"
+                aria-label="Fecha de la aportación"
+                className="w-full"
               />
             </div>
           </div>

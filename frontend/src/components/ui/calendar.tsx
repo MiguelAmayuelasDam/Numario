@@ -15,16 +15,19 @@ function iso(year: number, month: number, day: number): string {
 }
 
 // Calendario mensual mínimo. `value`/`onSelect` usan fechas ISO (YYYY-MM-DD).
+// `marked` resalta con un punto los días con algo (p. ej. aportaciones).
 export function Calendar({
   value,
   onSelect,
   min,
   max,
+  marked,
 }: {
   value?: string
   onSelect: (isoDate: string) => void
   min?: string
   max?: string
+  marked?: Set<string>
 }) {
   const initial = value ? new Date(`${value}T00:00:00`) : new Date()
   const [view, setView] = useState(new Date(initial.getFullYear(), initial.getMonth(), 1))
@@ -78,6 +81,7 @@ export function Calendar({
           const isoDay = iso(year, month, day)
           const disabled = (min !== undefined && isoDay < min) || (max !== undefined && isoDay > max)
           const selected = value === isoDay
+          const isMarked = marked?.has(isoDay) ?? false
           return (
             <button
               key={isoDay}
@@ -85,7 +89,7 @@ export function Calendar({
               disabled={disabled}
               onClick={() => onSelect(isoDay)}
               className={cn(
-                "flex size-8 items-center justify-center rounded-md text-sm transition-colors",
+                "relative flex size-8 items-center justify-center rounded-md text-sm transition-colors",
                 selected
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-accent hover:text-accent-foreground",
@@ -93,6 +97,14 @@ export function Calendar({
               )}
             >
               {day}
+              {isMarked ? (
+                <span
+                  className={cn(
+                    "absolute bottom-1 size-1 rounded-full",
+                    selected ? "bg-primary-foreground" : "bg-invest",
+                  )}
+                />
+              ) : null}
             </button>
           )
         })}

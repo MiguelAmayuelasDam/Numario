@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { ContributionDialog } from "@/components/ContributionDialog"
@@ -19,15 +19,10 @@ import {
   type MonthAsset,
   api,
 } from "@/lib/api"
-import { formatDateHeader, formatMoney } from "@/lib/format"
+import { formatDateHeader, formatMoney, todayISO } from "@/lib/format"
 
 const ALL_GROUPS = "all"
 const NO_GROUP = "none"
-
-function monthKey(): { year: number; month: number } {
-  const now = new Date()
-  return { year: now.getFullYear(), month: now.getMonth() + 1 }
-}
 
 /**
  * Estado real de la cartera: lo que **de verdad** has aportado a cada activo (no
@@ -36,7 +31,6 @@ function monthKey(): { year: number; month: number } {
  * (incluidas las extra). Registra lo real, pasado o presente.
  */
 export default function PortfolioState() {
-  const { year, month } = useMemo(monthKey, [])
   const [rows, setRows] = useState<MonthAsset[]>([])
   const [groups, setGroups] = useState<InvestmentGroup[]>([])
   const [selectedId, setSelectedId] = useState<string>("")
@@ -49,18 +43,20 @@ export default function PortfolioState() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [grps, monthRows] = await Promise.all([
+      // El total_contributed es de toda la historia (no depende del día); la fecha
+      // solo hace falta porque el endpoint la pide.
+      const [grps, statusRows] = await Promise.all([
         api.investment.listGroups(),
-        api.investment.month(year, month, "0"),
+        api.investment.status(todayISO(), "0"),
       ])
       setGroups(grps)
-      setRows(monthRows)
+      setRows(statusRows)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo cargar la cartera")
     } finally {
       setLoading(false)
     }
-  }, [year, month])
+  }, [])
 
   useEffect(() => {
     void load()

@@ -466,16 +466,15 @@ export const api = {
       request<Asset>(`/investment/assets/${id}`, { method: "PATCH", body: changes, auth: true }),
     deleteAsset: (id: string): Promise<void> =>
       request<void>(`/investment/assets/${id}`, { method: "DELETE", auth: true }),
-    month: (year: number, month: number, total: string): Promise<MonthAsset[]> =>
-      request<MonthAsset[]>(
-        `/investment/month?year=${year}&month=${month}&total=${total}`,
-        { auth: true },
-      ),
+    status: (on: string, total: string): Promise<MonthAsset[]> =>
+      request<MonthAsset[]>(`/investment/status?on=${on}&total=${total}`, { auth: true }),
     history: (assetId?: string): Promise<Contribution[]> =>
       request<Contribution[]>(
         `/investment/history${assetId ? `?asset_id=${assetId}` : ""}`,
         { auth: true },
       ),
+    contributionDates: (): Promise<string[]> =>
+      request<string[]>("/investment/contribution-dates", { auth: true }),
     contribute: (
       asset_id: string,
       amount: string,
@@ -487,10 +486,10 @@ export const api = {
         body: { asset_id, amount, ...(occurred_on ? { occurred_on } : {}), ...(extra ? { extra: true } : {}) },
         auth: true,
       }),
-    undoContribution: (asset_id: string, year: number, month: number): Promise<void> =>
-      request<void>(
-        `/investment/contributions?asset_id=${asset_id}&year=${year}&month=${month}`,
-        { method: "DELETE", auth: true },
-      ),
+    undoContribution: (asset_id: string, on: string): Promise<void> =>
+      request<void>(`/investment/contributions?asset_id=${asset_id}&on=${on}`, {
+        method: "DELETE",
+        auth: true,
+      }),
   },
 }

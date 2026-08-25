@@ -7,12 +7,11 @@ la categoría "Inversiones", con `asset_id`), así que el cubo Inversión del
 """
 
 import uuid
-from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import extract, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.asset import Asset
@@ -277,19 +276,16 @@ def _plan_for(db: Session, user: User, total: Decimal) -> dict[str, Decimal]:
 
 
 def _sum_by_asset(
-    db: Session, user: User, year: int | None = None, month: int | None = None
+    db: Session, user: User, on: date | None = None
 ) -> dict[uuid.UUID, Decimal]:
-    """Suma de lo aportado a cada activo (movimientos con asset_id). Sin año/mes,
-    es el acumulado de toda la historia; con ellos, solo el de ese mes."""
+    """Suma de lo aportado a cada activo (movimientos con asset_id). Sin fecha, es
+    el acumulado de toda la historia; con ella, solo el de ese día."""
     stmt = select(Transaction.asset_id, Transaction.amount).where(
         Transaction.user_id == user.id,
         Transaction.asset_id.is_not(None),
     )
-    if year is not None and month is not None:
-        stmt = stmt.where(
-            extract("year", Transaction.occurred_on) == year,
-            extract("month", Transaction.occurred_on) == month,
-        )
+    if on is not None:
+        stmt = stmt.where(Transaction.occurred_on == on)
     totals: dict[uuid.UUID, Decimal] = {}
     for asset_id, amount in db.execute(stmt).all():
         totals[asset_id] = totals.get(asset_id, Decimal("0")) + amount
@@ -309,13 +305,25 @@ def list_contributions(
     return list(db.scalars(stmt).all())
 
 
-def month_status(
-    db: Session, user: User, year: int, month: int, total: Decimal
+def contribution_dates(db: Session, user: User) -> list[date]:
+    """Fechas (distintas) con alguna aportación, para marcarlas en el calendario."""
+    rows = db.execute(
+        select(Transaction.occurred_on)
+        .where(Transaction.user_id == user.id, Transaction.asset_id.is_not(None))
+        .distinct()
+        .order_by(Transaction.occurred_on)
+    ).all()
+    return [r[0] for r in rows]
+
+
+def status_on(
+    db: Session, user: User, on: date, total: Decimal
 ) -> list[MonthAssetStatus]:
-    """Estado del mes: por cada activo, lo previsto, lo aportado este mes, si está
-    hecho, y el total aportado a ese activo en toda su historia."""
+    """Estado de un día: por cada activo, lo previsto (según el reparto del total),
+    lo aportado **ese día**, si está hecho ese día, y el total aportado a ese activo
+    en toda su historia."""
     plan = _plan_for(db, user, total)
-    contributed = _sum_by_asset(db, user, year, month)
+    contributed = _sum_by_asset(db, user, on)
     all_time = _sum_by_asset(db, user)
     result = []
     for asset in list_assets(db, user):
@@ -370,17 +378,16 @@ def record_contribution(
 
 
 def undo_contributions(
-    db: Session, user: User, asset_id: uuid.UUID, year: int, month: int
+    db: Session, user: User, asset_id: uuid.UUID, on: date
 ) -> int:
-    """Desmarca: borra las aportaciones de un activo en un mes. Devuelve cuántas."""
+    """Desmarca: borra las aportaciones de un activo **en un día**. Devuelve cuántas."""
     _get_asset(db, user, asset_id)
     rows = list(
         db.scalars(
             select(Transaction).where(
                 Transaction.user_id == user.id,
                 Transaction.asset_id == asset_id,
-                extract("year", Transaction.occurred_on) == year,
-                extract("month", Transaction.occurred_on) == month,
+                Transaction.occurred_on == on,
             )
         ).all()
     )
@@ -388,12 +395,3 @@ def undo_contributions(
         db.delete(tx)
     db.commit()
     return len(rows)
-
-
-def default_contribution_date(year: int, month: int) -> date:
-    """Fecha por defecto de una aportación: hoy si el mes es el actual, si no el
-    último día del mes indicado (para registrar meses pasados con coherencia)."""
-    today = date.today()
-    if (year, month) == (today.year, today.month):
-        return today
-    return date(year, month, monthrange(year, month)[1])
