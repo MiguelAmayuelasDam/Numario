@@ -42,6 +42,9 @@ _BUCKETS = [("living", "Vida"), ("monthly", "Mes"), ("investment", "Inversión")
 
 
 def _period_range(granularity: str, year: int, month: int) -> tuple[date, date, int, str]:
+    if granularity == "all":
+        # Todo el histórico: rango abierto para que entren todos los movimientos.
+        return date.min, date.max, 0, "Todo"
     if granularity == "year":
         return date(year, 1, 1), date(year, 12, 31), 12, str(year)
     last = monthrange(year, month)[1]
@@ -74,8 +77,13 @@ def overview(
     pcts = {"living": budget.living_pct, "monthly": budget.monthly_pct,
             "investment": budget.investment_pct}
     # Ingreso base del periodo: el del mes, o la suma de los 12 meses en vista de
-    # año (cada mes con su propio ingreso; ya no se multiplica por 12).
-    income_base = budget_service.income_for_period(db, user, granularity, year, month)
+    # año (cada mes con su propio ingreso; ya no se multiplica por 12). En la vista
+    # "Todo" la base es la suma de TODOS los ingresos registrados.
+    income_base = (
+        income
+        if granularity == "all"
+        else budget_service.income_for_period(db, user, granularity, year, month)
+    )
     spent_rows = db.execute(
         select(Category.bucket, func.coalesce(func.sum(Transaction.amount), 0))
         .join(Category, Transaction.category_id == Category.id)

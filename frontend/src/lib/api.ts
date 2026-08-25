@@ -226,7 +226,7 @@ export interface AssetInput {
   group_id?: string | null
 }
 
-export type Granularity = "month" | "year"
+export type Granularity = "month" | "year" | "all"
 
 export class ApiError extends Error {
   status: number

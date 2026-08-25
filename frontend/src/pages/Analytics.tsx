@@ -255,6 +255,11 @@ export default function Analytics() {
   }, [granularity, sel])
 
   const loadSeries = useCallback(async () => {
+    // "Todo" es un único agregado: no tiene navegador ni serie que pedir.
+    if (granularity === "all") {
+      setSeries([])
+      return
+    }
     setSeries(await api.analytics.series(granularity, navYear, 6))
   }, [granularity, navYear])
 
@@ -324,7 +329,7 @@ export default function Analytics() {
 
       {/* Selector de periodo */}
       <div className="mb-3 flex gap-2">
-        {(["month", "year"] as Granularity[]).map((g) => (
+        {(["month", "year", "all"] as Granularity[]).map((g) => (
           <button
             key={g}
             type="button"
@@ -336,12 +341,18 @@ export default function Analytics() {
                 : "text-muted-foreground",
             )}
           >
-            {g === "month" ? "Meses" : "Años"}
+            {g === "month" ? "Meses" : g === "year" ? "Años" : "Todo"}
           </button>
         ))}
       </div>
 
-      {/* Navegador con mini-barras ingresos/gastos (ocupa todo el ancho) */}
+      {/* En "Todo" no hay navegador: es un único agregado del histórico. */}
+      {granularity === "all" ? (
+        <div className="mb-6 border-b pb-3 text-sm text-muted-foreground">
+          Histórico completo · todos tus movimientos desde el principio.
+        </div>
+      ) : (
+      /* Navegador con mini-barras ingresos/gastos (ocupa todo el ancho) */
       <div className="mb-6 flex items-stretch gap-1 border-b pb-2">
         <button
           type="button"
@@ -391,6 +402,7 @@ export default function Analytics() {
           <ChevronRight className="size-5" />
         </button>
       </div>
+      )}
 
       {overview ? (
         <>
@@ -426,15 +438,17 @@ export default function Analytics() {
                 <span className="font-medium" style={{ color: "var(--expense)" }}>
                   Gastos
                 </span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  · unos{" "}
-                  {formatMoney(
-                    Number(overview.summary.expense) /
-                    daysElapsed(overview.date_from, overview.date_to),
-                  )}
-                  /día
-                </span>
+                {granularity !== "all" ? (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · unos{" "}
+                    {formatMoney(
+                      Number(overview.summary.expense) /
+                      daysElapsed(overview.date_from, overview.date_to),
+                    )}
+                    /día
+                  </span>
+                ) : null}
               </p>
             </div>
             <div>

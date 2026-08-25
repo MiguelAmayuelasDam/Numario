@@ -37,6 +37,32 @@ def test_summary_excludes_transfer(
     assert summary["net"] == "700.00"  # el transfer no cuenta
 
 
+def test_overview_all_aggregates_everything(
+    client: TestClient, auth_headers: dict[str, str], seed_categories: None
+) -> None:
+    """La vista 'Todo' suma todos los movimientos (cualquier mes/año) y usa como
+    base del 50-30-20 la suma de todos los ingresos."""
+    client.put(
+        "/api/v1/budget",
+        headers=auth_headers,
+        json={"monthly_income": "1.00", "living_pct": 50, "monthly_pct": 30, "investment_pct": 20},
+    )
+    _mk(client, auth_headers, "1000.00", "income", "Nómina ene", date_="2025-01-31")
+    _mk(client, auth_headers, "500.00", "income", "Nómina jul", date_="2026-07-05")
+    superm = _cat(client, auth_headers, "Supermercado")
+    _mk(client, auth_headers, "200.00", "expense", "Super 2025", superm, date_="2025-03-15")
+    _mk(client, auth_headers, "100.00", "expense", "Super 2026", superm, date_="2026-07-05")
+
+    ov = client.get("/api/v1/analytics/overview?granularity=all", headers=auth_headers).json()
+    assert ov["period_label"] == "Todo"
+    assert ov["summary"]["income"] == "1500.00"  # suma de todos los ingresos
+    assert ov["summary"]["expense"] == "300.00"  # suma de todos los gastos
+    assert ov["summary"]["net"] == "1200.00"
+    living = next(b for b in ov["buckets"] if b["bucket"] == "living")
+    assert living["budget"] == "750.00"  # 1500 (base = todos los ingresos) × 50%
+    assert living["spent"] == "300.00"  # todo el gasto de Supermercado (cubo Vida)
+
+
 def test_buckets_budget_and_spent(
     client: TestClient, auth_headers: dict[str, str], seed_categories: None
 ) -> None:
