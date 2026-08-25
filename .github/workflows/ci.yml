@@ -127,7 +127,12 @@ jobs:
         run: uv run bandit -r app
       - name: pip-audit (CVEs de dependencias Python)
         working-directory: backend
-        run: uv run pip-audit
+        # `pip` (herramienta de build, no dependencia de la app ni se envía en la
+        # imagen de producción) arrastraba PYSEC-2026-3721; se actualiza a la versión
+        # parcheada antes de auditar, en vez de ignorar la CVE.
+        run: |
+          uv run python -m pip install --quiet --upgrade "pip>=26.2"
+          uv run pip-audit
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

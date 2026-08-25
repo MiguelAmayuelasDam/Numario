@@ -139,4 +139,41 @@ describe("Portfolio", () => {
     // El 40% restante queda sin asignar.
     expect(screen.getByText("Sin asignar")).toBeInTheDocument()
   })
+
+  it("abre el diálogo de grupo y su split responde", async () => {
+    installFetch()
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByText("ETF World")
+
+    await user.click(screen.getByRole("button", { name: "Añadir grupo" }))
+    expect(await screen.findByText("Nuevo grupo")).toBeInTheDocument()
+    await user.type(screen.getByLabelText("Nombre"), "Mi bróker")
+    const split = screen.getByRole("spinbutton", { name: "Renta variable del grupo" })
+    await user.clear(split)
+    await user.type(split, "80")
+    expect(screen.getByText(/Renta fija: 20%/)).toBeInTheDocument()
+  })
+
+  it("abre el diálogo de activo", async () => {
+    installFetch()
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByText("ETF World")
+
+    await user.click(screen.getByRole("button", { name: "Añadir activo" }))
+    expect(await screen.findByText("Nuevo activo")).toBeInTheDocument()
+    await user.type(screen.getByLabelText("Nombre"), "Nuevo ETF")
+    expect(screen.getByLabelText("Nombre")).toHaveValue("Nuevo ETF")
+  })
+
+  it("abre la aportación extra", async () => {
+    installFetch()
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findAllByText("ETF World")
+
+    await user.click(screen.getByRole("button", { name: "Aportación extra" }))
+    expect(await screen.findByRole("dialog")).toBeInTheDocument()
+  })
 })

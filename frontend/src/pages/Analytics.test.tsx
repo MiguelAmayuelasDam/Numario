@@ -54,12 +54,21 @@ function renderPage(entry = "/analisis") {
 }
 
 afterEach(() => {
+  vi.useRealTimers()
   cleanup()
   vi.restoreAllMocks()
   localStorage.clear()
 })
 
-beforeEach(() => localStorage.setItem("numario.access", "ACC"))
+beforeEach(() => {
+  localStorage.setItem("numario.access", "ACC")
+  // Fecha fija (julio 2026, la del mock de overview) para que el test no dependa
+  // de cuándo se ejecute: el componente usa new Date() para el mes del ingreso, y
+  // con la fecha real (p. ej. agosto) el ajuste iba a otro mes. Se falsea solo
+  // `Date` para no tocar setTimeout/setInterval (que usan waitFor y userEvent).
+  vi.useFakeTimers({ toFake: ["Date"] })
+  vi.setSystemTime(new Date("2026-07-15T12:00:00"))
+})
 
 describe("Analytics", () => {
   it("muestra ingresos, gastos y neto", async () => {
