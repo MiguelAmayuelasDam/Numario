@@ -84,10 +84,11 @@ describe("PortfolioState", () => {
     expect(screen.getByText("400,00 €")).toBeInTheDocument()
     // Donut con el peso real de cada activo (300/400 = 75%).
     expect(screen.getByText("75.0%")).toBeInTheDocument()
-    // Por defecto se elige el más aportado (SXR8) y sale su total + su aportación.
     expect(screen.getAllByText("SXR8").length).toBeGreaterThanOrEqual(1)
+    // Por defecto se elige el más aportado (SXR8); su detalle y su aportación cargan
+    // de forma asíncrona (selección → historial), así que se esperan con findByText.
+    expect(await screen.findByText("+300,00 €")).toBeInTheDocument()
     expect(screen.getByText("300,00 €")).toBeInTheDocument()
-    expect(screen.getByText("+300,00 €")).toBeInTheDocument()
   })
 
   it("filtra por grupo", async () => {
