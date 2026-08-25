@@ -61,12 +61,14 @@ def create_transaction(
     concept: str,
     occurred_on: date,
     category_id: uuid.UUID | None,
+    asset_id: uuid.UUID | None = None,
 ) -> Transaction:
     # Valida que la categoría (si se indica) sea global o del usuario.
     resolve_category_for_user(db, user, category_id)
     transaction = Transaction(
         user_id=user.id,
         category_id=category_id,
+        asset_id=asset_id,
         amount=amount,
         type=type_,
         concept=concept.strip(),

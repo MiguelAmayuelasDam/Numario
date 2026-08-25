@@ -172,6 +172,60 @@ export interface EmergencyFund {
   contributions: EmergencyContribution[]
 }
 
+// ── Cartera de inversión ────────────────────────────────────────────────────
+
+export type AssetClass = "variable" | "fija"
+export type AssetKind = "etf" | "fondo" | "accion" | "cripto" | "otro"
+
+export interface Asset {
+  id: string
+  name: string
+  asset_class: AssetClass
+  kind: AssetKind
+  weight: string
+  group_id: string | null
+  active: boolean
+}
+
+export interface InvestmentGroup {
+  id: string
+  name: string
+  weight: string // % del total (grupos + activos sueltos suman 100)
+  variable_pct: string // split interno del grupo (suman 100)
+  fixed_pct: string
+}
+
+export interface GroupInput {
+  name: string
+  weight: string
+  variable_pct: string
+  fixed_pct: string
+}
+
+export interface MonthAsset {
+  asset: Asset
+  planned: string // lo que le tocaría según el reparto
+  contributed: string // lo aportado de verdad este mes
+  done: boolean
+  total_contributed: string // acumulado de toda su historia
+}
+
+export interface Contribution {
+  id: string
+  asset_id: string | null
+  concept: string
+  amount: string
+  occurred_on: string
+}
+
+export interface AssetInput {
+  name: string
+  asset_class: AssetClass
+  kind: AssetKind
+  weight: string
+  group_id?: string | null
+}
+
 export type Granularity = "month" | "year"
 
 export class ApiError extends Error {
@@ -387,6 +441,54 @@ export const api = {
       request<EmergencyFund>("/emergency-fund/monthly-need", {
         method: "PUT",
         body: { amount },
+        auth: true,
+      }),
+  },
+
+  investment: {
+    listGroups: (): Promise<InvestmentGroup[]> =>
+      request<InvestmentGroup[]>("/investment/groups", { auth: true }),
+    createGroup: (input: GroupInput): Promise<InvestmentGroup> =>
+      request<InvestmentGroup>("/investment/groups", { method: "POST", body: input, auth: true }),
+    updateGroup: (id: string, changes: Partial<GroupInput>): Promise<InvestmentGroup> =>
+      request<InvestmentGroup>(`/investment/groups/${id}`, {
+        method: "PATCH",
+        body: changes,
+        auth: true,
+      }),
+    deleteGroup: (id: string): Promise<void> =>
+      request<void>(`/investment/groups/${id}`, { method: "DELETE", auth: true }),
+    listAssets: (): Promise<Asset[]> =>
+      request<Asset[]>("/investment/assets", { auth: true }),
+    createAsset: (input: AssetInput): Promise<Asset> =>
+      request<Asset>("/investment/assets", { method: "POST", body: input, auth: true }),
+    updateAsset: (id: string, changes: Partial<AssetInput> & { active?: boolean }): Promise<Asset> =>
+      request<Asset>(`/investment/assets/${id}`, { method: "PATCH", body: changes, auth: true }),
+    deleteAsset: (id: string): Promise<void> =>
+      request<void>(`/investment/assets/${id}`, { method: "DELETE", auth: true }),
+    status: (on: string, total: string): Promise<MonthAsset[]> =>
+      request<MonthAsset[]>(`/investment/status?on=${on}&total=${total}`, { auth: true }),
+    history: (assetId?: string): Promise<Contribution[]> =>
+      request<Contribution[]>(
+        `/investment/history${assetId ? `?asset_id=${assetId}` : ""}`,
+        { auth: true },
+      ),
+    contributionDates: (): Promise<string[]> =>
+      request<string[]>("/investment/contribution-dates", { auth: true }),
+    contribute: (
+      asset_id: string,
+      amount: string,
+      occurred_on?: string,
+      extra = false,
+    ): Promise<Transaction> =>
+      request<Transaction>("/investment/contributions", {
+        method: "POST",
+        body: { asset_id, amount, ...(occurred_on ? { occurred_on } : {}), ...(extra ? { extra: true } : {}) },
+        auth: true,
+      }),
+    undoContribution: (asset_id: string, on: string): Promise<void> =>
+      request<void>(`/investment/contributions?asset_id=${asset_id}&on=${on}`, {
+        method: "DELETE",
         auth: true,
       }),
   },

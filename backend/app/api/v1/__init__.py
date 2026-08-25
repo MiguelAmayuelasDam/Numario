@@ -10,6 +10,7 @@ from app.api.v1 import (
     emergency_fund,
     forecast,
     imports,
+    investment,
     transactions,
 )
 
@@ -22,3 +23,4 @@ api_router.include_router(budget.router)
 api_router.include_router(analytics.router)
 api_router.include_router(forecast.router)
 api_router.include_router(emergency_fund.router)
+api_router.include_router(investment.router)

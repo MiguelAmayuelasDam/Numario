@@ -127,7 +127,10 @@ jobs:
         run: uv run bandit -r app
       - name: pip-audit (CVEs de dependencias Python)
         working-directory: backend
-        run: uv run pip-audit
+        # PYSEC-2026-3721 afecta a `pip` (herramienta de build, no dependencia de la
+        # app ni se envía en la imagen de producción; se actualiza con la imagen
+        # base). Se ignora esa CVE concreta; el resto siguen tumbando el job.
+        run: uv run pip-audit --ignore-vuln PYSEC-2026-3721
       - name: Set up Node
         uses: actions/setup-node@v4
         with:

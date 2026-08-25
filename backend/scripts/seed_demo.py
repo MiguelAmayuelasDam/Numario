@@ -36,8 +36,23 @@ from app.services import (  # noqa: E402
     budget_service,
     emergency_fund_service,
     forecast_service,
+    investment_service,
 )
 from sqlalchemy import select  # noqa: E402
+
+# Cartera de demostración, para que la pantalla "Cartera" enseñe la estructura:
+# un grupo (bróker) con su propio split renta variable/fija y sus activos dentro.
+#   Grupos: (nombre, peso del total, variable_pct, fixed_pct)
+CARTERA_GRUPOS = [
+    ("Interactive Brokers", "100", "85", "15"),
+]
+#   Activos del grupo: (nombre, clase, tipo, peso de su clase en el grupo, grupo)
+CARTERA_ACTIVOS = [
+    ("ETF MSCI World", "variable", "etf", "40", "Interactive Brokers"),
+    ("ETF S&P 500", "variable", "etf", "35", "Interactive Brokers"),
+    ("ETF Nasdaq 100", "variable", "etf", "25", "Interactive Brokers"),
+    ("Fondo Renta Fija Europa", "fija", "fondo", "100", "Interactive Brokers"),
+]
 
 DEMO_EMAIL = "mouredev@gmail.com"
 DEMO_NICK = "mouredev"
@@ -203,6 +218,22 @@ def main() -> None:
         # Colchón: 6 meses × 1.600 €/mes = 9.600 € de objetivo.
         budget_service.set_emergency_months(db, user, 6)
         budget_service.set_emergency_monthly_need(db, user, Decimal("1600"))
+
+        # Cartera: un grupo (bróker) al 100% con split 85/15 que contiene activos
+        # de renta variable Y de renta fija. Sin aportaciones: la pantalla muestra
+        # el reparto calculado y el usuario marca lo que quiera en la demo.
+        grupos_por_nombre = {}
+        for nombre, peso, vpct, fpct in CARTERA_GRUPOS:
+            grupo = investment_service.create_group(
+                db, user, name=nombre, weight=Decimal(peso),
+                variable_pct=Decimal(vpct), fixed_pct=Decimal(fpct),
+            )
+            grupos_por_nombre[nombre] = grupo.id
+        for nombre, clase, tipo, peso, grupo_nombre in CARTERA_ACTIVOS:
+            investment_service.create_asset(
+                db, user, name=nombre, asset_class=clase, kind=tipo,
+                weight=Decimal(peso), group_id=grupos_por_nombre[grupo_nombre],
+            )
 
         cats = _categorias(db)
         hoy = date.today()

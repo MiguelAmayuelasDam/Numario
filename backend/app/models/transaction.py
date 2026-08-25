@@ -28,6 +28,12 @@ class Transaction(Base):
     category_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("categories.id", ondelete="SET NULL"), index=True, nullable=True
     )
+    # Activo de inversión al que corresponde esta aportación, si es una. Los
+    # movimientos normales lo llevan a NULL. `SET NULL` para no perder el
+    # movimiento si se borra el activo (igual que con la categoría).
+    asset_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("assets.id", ondelete="SET NULL"), index=True, nullable=True
+    )
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     type: Mapped[str] = mapped_column(String(10), nullable=False)  # income | expense
     concept: Mapped[str] = mapped_column(String(255), nullable=False)

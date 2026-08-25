@@ -504,6 +504,38 @@ en el Dashboard). Se le da identidad propia:
 
 ---
 
+## Cartera de inversión por activo (post-entrega)
+
+**Objetivo.** Romper el cubo Inversión del 50-30-20 (que hoy es un único saco)
+en una **cartera de activos**: ETFs, fondos, acciones, cripto y renta fija.
+
+**Qué se implementó**
+
+- **Tres niveles**: clase (variable/fija) → grupo opcional → activo, cada uno
+  con su peso (% de su padre). Reproduce una hoja de asignación real: renta
+  variable repartida en «Crecimiento» y «Dividendos», y dentro de cada grupo
+  los activos por peso. Pesos literales (no se normaliza el único presente).
+- **Calculadora del mes**: se indica cuánto se va a invertir en total y la app
+  calcula el importe exacto para cada activo. El reparto **cuadra al céntimo**
+  (método del mayor resto; TDD, porque es lógica financiera).
+- **Checklist con "hecho"**: marcar una aportación **crea el movimiento** (un
+  traspaso a "Inversiones" con `asset_id`), que alimenta el cubo Inversión sin
+  tocar la analítica. Desmarcar la deshace.
+- **Fuera de alcance por decisión**: valor de mercado y rentabilidad. Se siguen
+  en el bróker (Interactive Brokers), no en Numario.
+
+**Por qué / decisiones**
+
+- **Una aportación es un movimiento** (columna `transaction.asset_id`), no un
+  registro paralelo: una sola fuente de verdad y el 50-30-20 cuadra solo.
+- Detalle en el ADR [`0003`](decisions/0003-cubos-por-usuario.md) sobre los cubos
+  y en [`docs/plan-inversion-activos.md`](plan-inversion-activos.md).
+
+**Estado:** ✅ Completada (rama `feat/inversion-activos`; fuera de `main` mientras
+se decide el PR). Backend con TDD en el reparto; pantalla Cartera con E2E.
+
+---
+
 ## Vista transversal por áreas
 
 Resumen acumulado; se amplía en cada fase.

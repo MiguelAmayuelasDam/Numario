@@ -10,6 +10,7 @@ const LINKS = [
   { to: "/", label: "Inicio", end: true },
   { to: "/movimientos", label: "Movimientos", end: false },
   { to: "/analisis", label: "Análisis", end: false },
+  { to: "/cartera", label: "Cartera", end: false },
 ]
 
 export function TopNav() {

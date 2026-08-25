@@ -115,8 +115,12 @@ no salga entera en verde:
 | **No computables**            | Aportes a inversión y traspaso a cuenta de ahorro |
 | **Previsto vs gastado**       | Supermercado, Restaurante y Gasolina del mes en curso |
 | **Comparación de años**       | 2025 completo (alquiler) frente a 2026 (hipoteca) |
+| **Cartera de inversión**      | 4 activos con reparto 85/15 (solo en `feat/inversion-activos`) |
 
 > El script no siembra días futuros: en el mes en curso solo llega hasta hoy.
+>
+> La cartera de inversión solo se siembra en la rama `feat/inversion-activos`
+> (en `main` el modelo aún no existe).
 
 ---
 

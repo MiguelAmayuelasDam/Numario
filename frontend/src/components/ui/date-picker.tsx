@@ -24,6 +24,7 @@ export function DatePicker({
   placeholder,
   min,
   max,
+  marked,
   className,
   "aria-label": ariaLabel,
 }: {
@@ -32,6 +33,7 @@ export function DatePicker({
   placeholder: string
   min?: string
   max?: string
+  marked?: Set<string>
   className?: string
   "aria-label"?: string
 }) {
@@ -59,6 +61,7 @@ export function DatePicker({
           value={value}
           min={min}
           max={max}
+          marked={marked}
           onSelect={(isoDate) => {
             onChange(isoDate)
             setOpen(false)

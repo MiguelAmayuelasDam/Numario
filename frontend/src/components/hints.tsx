@@ -36,6 +36,26 @@ export function Rule503020Hint() {
   )
 }
 
+export function PortfolioHint() {
+  return (
+    <InfoHint label="Qué es la cartera de inversión" title="La cartera de inversión">
+      <p>
+        Reparte el 20% de inversión de tu 50-30-20 entre tus activos —ETFs, fondos,
+        acciones, cripto o renta fija— según el peso que le das a cada uno.
+      </p>
+      <p>
+        Le dices cuánto vas a invertir este mes y la app calcula la cantidad exacta
+        para cada activo. Al marcar cada aportación como hecha, se crea el
+        movimiento y cuenta en tu cubo de inversión.
+      </p>
+      <p>
+        No sigue el valor de mercado ni la rentabilidad: eso lo llevas en tu bróker.
+        Aquí solo planificas y registras lo que aportas.
+      </p>
+    </InfoHint>
+  )
+}
+
 export function EmergencyFundHint() {
   return (
     <InfoHint label="Qué es el colchón de emergencia" title="El colchón de emergencia">
