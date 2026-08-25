@@ -14,7 +14,9 @@ from app.services import analytics_service
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
-Granularity = Literal["month", "year"]
+# overview admite "all" (histórico completo); series/navegador solo mes o año.
+Granularity = Literal["month", "year", "all"]
+SeriesGranularity = Literal["month", "year"]
 
 
 @router.get("/overview", response_model=AnalyticsOverview)
@@ -32,7 +34,7 @@ def overview(
 def series(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-    granularity: Granularity = "month",
+    granularity: SeriesGranularity = "month",
     year: int = Query(default_factory=lambda: date.today().year, ge=2000, le=2100),
     count: int = Query(default=6, ge=1, le=36),
 ) -> list:
