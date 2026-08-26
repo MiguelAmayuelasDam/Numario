@@ -1,10 +1,10 @@
 import { useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
 const WEEKDAYS = ["L", "M", "X", "J", "V", "S", "D"]
-const monthFmt = new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" })
+const monthFmt = new Intl.DateTimeFormat("es-ES", { month: "long" })
 const YEARS_PER_PAGE = 12
 
 function pad(n: number): string {
@@ -115,8 +115,8 @@ export function Calendar({
     ...Array<null>(leading).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
-  const label = monthFmt.format(view)
-  const monthTitle = label.charAt(0).toUpperCase() + label.slice(1)
+  const monthLabel = monthFmt.format(view)
+  const monthName = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)
 
   return (
     <div className="w-64">
@@ -129,14 +129,20 @@ export function Calendar({
         >
           <ChevronLeft className="size-4" />
         </button>
-        <button
-          type="button"
-          aria-label="Elegir año"
-          onClick={openYears}
-          className="rounded px-2 py-0.5 text-sm font-medium hover:bg-accent"
-        >
-          {monthTitle}
-        </button>
+        <span className="flex items-center gap-1.5">
+          <span className="text-sm font-medium">{monthName}</span>
+          {/* El año va suelto, como un desplegable (flechita ▾): así se ve que es
+              seleccionable sin tener que ir mes a mes. */}
+          <button
+            type="button"
+            aria-label="Elegir año"
+            onClick={openYears}
+            className="flex items-center gap-0.5 rounded-md border px-2 py-0.5 text-sm font-semibold hover:bg-accent"
+          >
+            {year}
+            <ChevronDown className="size-3.5 text-muted-foreground" />
+          </button>
+        </span>
         <button
           type="button"
           aria-label="Mes siguiente"
