@@ -352,8 +352,13 @@ export default function Analytics() {
           Histórico completo · todos tus movimientos desde el principio.
         </div>
       ) : (
-      /* Navegador con mini-barras ingresos/gastos (ocupa todo el ancho) */
-      <div className="mb-6 flex items-stretch gap-1 border-b pb-2">
+        <>
+          {/* En "Meses" las flechas navegan por año; se muestra cuál, bien visible. */}
+          {granularity === "month" ? (
+            <div className="mb-2 text-center text-base font-semibold">{navYear}</div>
+          ) : null}
+          {/* Navegador con mini-barras ingresos/gastos (ocupa todo el ancho) */}
+          <div className="mb-6 flex items-stretch gap-1 border-b pb-2">
         <button
           type="button"
           aria-label="Periodo anterior"
@@ -402,6 +407,7 @@ export default function Analytics() {
           <ChevronRight className="size-5" />
         </button>
       </div>
+        </>
       )}
 
       {overview ? (
