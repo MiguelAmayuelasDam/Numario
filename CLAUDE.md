@@ -338,6 +338,8 @@ Estas reglas deben respetarse siempre al escribir código:
   ha hecho en cada fase y **por qué** + vista transversal por áreas
 - [`docs/comandos.md`](docs/comandos.md) — **runbook**: Docker, tests, cobertura,
   migraciones, E2E, seguridad y seed de demostración
+- [`docs/backlog.md`](docs/backlog.md) — **tareas pendientes** ya planificadas (con
+  su solución diseñada), aún sin implementar
 
 **Análisis** (Fase 0)
 - [`docs/analysis/01-personas.md`](docs/analysis/01-personas.md) — personas de usuario
