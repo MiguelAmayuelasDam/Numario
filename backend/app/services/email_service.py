@@ -62,7 +62,9 @@ def _send_resend(*, to: str, subject: str, text: str) -> None:
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=10):
+        # URL literal fija (https://api.resend.com), no controlable por el usuario:
+        # no hay riesgo de esquema file:/ ni arbitrario que motiva el aviso B310.
+        with urllib.request.urlopen(req, timeout=10):  # nosec B310
             pass
     except urllib.error.HTTPError as e:
         logger.error("Resend devolvió %s: %s", e.code, e.read().decode()[:200])
