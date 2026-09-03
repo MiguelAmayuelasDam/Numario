@@ -302,6 +302,13 @@ Usuario:     mouredev@gmail.com    (o el nick: mouredev)
 Contraseña:  Ahorr0!Constante
 ```
 
+> ⏱️ **La primera visita puede tardar ~1 min.** El backend está en Render (plan
+> gratuito) y se **duerme tras ~15 min sin uso**. Al entrar, la web (Vercel) carga
+> al instante, pero la primera acción que habla con el servidor (iniciar sesión,
+> cargar datos) despierta el backend: el botón se queda pensando ~30-60 s y luego
+> todo va fluido. **No hay que arrancar nada a mano**, solo esperar; si se atasca,
+> un F5 cuando ya está arriba lo resuelve.
+
 La cuenta viene con **dos años de datos reales**: 2025 completo y 2026 hasta la
 fecha, 372 movimientos que cuentan una historia coherente —alguien que en 2025
 vivía de alquiler y en 2026 compra piso y le suben el sueldo en abril—.
