@@ -42,6 +42,17 @@ class Settings(BaseSettings):
     # "none" = solo reglas + aprendizaje. Punto de extensión para el futuro.
     ai_provider: str = "none"
 
+    # Email (recuperación de contraseña). Enchufable, apagado por defecto:
+    # "console" = registra el enlace en el log (dev); "resend" = envía de verdad
+    # (necesita `resend_api_key`); "none" = no hace nada.
+    email_provider: str = "console"
+    resend_api_key: str = ""
+    email_from: str = "Numario <onboarding@resend.dev>"
+    # URL del frontend para construir el enlace de reset (en prod, la de Vercel).
+    frontend_url: str = "http://localhost:5173"
+    # Caducidad del enlace de recuperación.
+    password_reset_expire_minutes: int = 60
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

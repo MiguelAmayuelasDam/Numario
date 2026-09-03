@@ -73,3 +73,9 @@ def generate_refresh_token() -> tuple[str, str]:
     """Devuelve `(token_en_claro, sha256_del_token)`."""
     raw = secrets.token_urlsafe(48)
     return raw, hash_refresh_token(raw)
+
+
+# Alias genéricos para otros tokens opacos de un solo uso (p. ej. el de recuperar
+# contraseña): mismo mecanismo (aleatorio + sha256), distinto propósito.
+hash_opaque_token = hash_refresh_token
+generate_opaque_token = generate_refresh_token

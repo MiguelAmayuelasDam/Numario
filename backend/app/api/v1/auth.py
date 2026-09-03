@@ -9,10 +9,12 @@ from app.core.rate_limit import limiter
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.auth import (
+    ForgotPasswordRequest,
     LoginRequest,
     LogoutRequest,
     RefreshRequest,
     RegisterRequest,
+    ResetPasswordRequest,
     TokenPair,
     UpdateProfileRequest,
     UserRead,
@@ -20,10 +22,13 @@ from app.schemas.auth import (
 from app.services.auth_service import (
     EmailAlreadyExistsError,
     InvalidRefreshTokenError,
+    InvalidResetTokenError,
     NicknameAlreadyExistsError,
     authenticate_user,
     issue_token_pair,
     register_user,
+    request_password_reset,
+    reset_password,
     revoke_refresh_token,
     rotate_refresh_token,
     update_nickname,
@@ -60,6 +65,32 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
         )
     access_token, refresh_token = issue_token_pair(db, user)
     return TokenPair(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit(lambda: settings.rate_limit_login)
+def forgot_password(
+    request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)
+) -> dict[str, str]:
+    """Pide recuperar la contraseña. Responde **siempre igual** (no revela si el
+    email está registrado); si existe, envía el correo con el enlace."""
+    request_password_reset(db, email=payload.email)
+    return {"detail": "Si el email está registrado, te hemos enviado un correo."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+def reset_password_endpoint(
+    payload: ResetPasswordRequest, db: Session = Depends(get_db)
+) -> Response:
+    """Cambia la contraseña con el token del correo (un solo uso, caducable)."""
+    try:
+        reset_password(db, raw_token=payload.token, new_password=payload.new_password)
+    except InvalidResetTokenError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El enlace no es válido o ha caducado. Pide uno nuevo.",
+        ) from exc
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/refresh", response_model=TokenPair)

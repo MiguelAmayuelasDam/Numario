@@ -4,6 +4,7 @@ Independiente de FastAPI: recibe una `Session` y datos primitivos, de modo que
 se puede testear sin levantar HTTP (facilita el TDD).
 """
 
+import uuid
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
@@ -12,14 +13,18 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import (
     create_access_token,
+    generate_opaque_token,
     generate_refresh_token,
+    hash_opaque_token,
     hash_password,
     hash_refresh_token,
     verify_password,
     verify_password_dummy,
 )
+from app.models.password_reset_token import PasswordResetToken
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
+from app.services import email_service
 
 
 class EmailAlreadyExistsError(Exception):
@@ -32,6 +37,10 @@ class NicknameAlreadyExistsError(Exception):
 
 class InvalidRefreshTokenError(Exception):
     """El refresh token no existe, está revocado o ha expirado."""
+
+
+class InvalidResetTokenError(Exception):
+    """El token de recuperación no existe, ya se usó o ha caducado."""
 
 
 def _normalize(value: str) -> str:
@@ -128,3 +137,53 @@ def revoke_refresh_token(db: Session, *, raw_token: str, user: User) -> None:
     if row is not None and row.revoked_at is None:
         row.revoked_at = datetime.now(UTC)
         db.commit()
+
+
+def _revoke_all_refresh(db: Session, user_id: uuid.UUID) -> None:
+    """Revoca todos los refresh activos del usuario (cerrar sesión en todas partes)."""
+    now = datetime.now(UTC)
+    for row in db.scalars(
+        select(RefreshToken).where(
+            RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None)
+        )
+    ):
+        row.revoked_at = now
+
+
+# ── Recuperación de contraseña por correo ────────────────────────────────────
+
+def request_password_reset(db: Session, *, email: str) -> None:
+    """Si el email existe, crea un token de reset y envía el correo. **No revela**
+    si el email está registrado o no (desde fuera se responde siempre igual)."""
+    email_n = _normalize(email)
+    user = db.scalar(select(User).where(User.email == email_n))
+    if user is None:
+        return  # silencioso: no filtrar qué emails existen (enumeración)
+    raw, token_hash = generate_opaque_token()
+    expires_at = datetime.now(UTC) + timedelta(minutes=settings.password_reset_expire_minutes)
+    db.add(PasswordResetToken(user_id=user.id, token_hash=token_hash, expires_at=expires_at))
+    db.commit()
+    reset_url = f"{settings.frontend_url.rstrip('/')}/reset-password?token={raw}"
+    email_service.send_password_reset(to=user.email, reset_url=reset_url)
+
+
+def reset_password(db: Session, *, raw_token: str, new_password: str) -> None:
+    """Cambia la contraseña con un token de reset válido: lo marca usado y **revoca
+    todas las sesiones** del usuario. Falla con `InvalidResetTokenError` si el token
+    no existe, ya se usó o ha caducado."""
+    token_hash = hash_opaque_token(raw_token)
+    row = db.scalar(select(PasswordResetToken).where(PasswordResetToken.token_hash == token_hash))
+    if row is None or row.used_at is not None:
+        raise InvalidResetTokenError
+    expires_at = row.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if expires_at <= datetime.now(UTC):
+        raise InvalidResetTokenError
+    user = db.get(User, row.user_id)
+    if user is None:
+        raise InvalidResetTokenError
+    user.password_hash = hash_password(new_password)
+    row.used_at = datetime.now(UTC)
+    _revoke_all_refresh(db, user.id)
+    db.commit()

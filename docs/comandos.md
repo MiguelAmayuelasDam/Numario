@@ -236,11 +236,22 @@ curl -s -X POST $BASE/refresh -H 'Content-Type: application/json' \
 # Logout (revoca el refresh). Requiere Bearer
 curl -s -X POST $BASE/logout -H "Authorization: Bearer <ACCESS>" \
   -H 'Content-Type: application/json' -d '{"refresh_token":"<REFRESH>"}'
+
+# Recuperar contraseña: pide el enlace (responde 202 exista o no el email).
+# Con EMAIL_PROVIDER=console el enlace se imprime en los logs del backend:
+#   docker compose logs -f backend  → busca "[email:console] … enlace de reset:"
+curl -s -X POST $BASE/forgot-password -H 'Content-Type: application/json' \
+  -d '{"email":"carlos@mail.com"}'
+
+# Cambiar la contraseña con el token del enlace. Sustituye <TOKEN>
+curl -s -X POST $BASE/reset-password -H 'Content-Type: application/json' \
+  -d '{"token":"<TOKEN>","new_password":"Str0ng!Pass2"}'
 ```
 
 Comprobaciones esperadas: registro `201`, contraseña débil `422`, nick duplicado
 `409`, login `200`, `/me` sin token `401`, refresh reutilizado `401`, logout
-`204`, y >5 logins/min → `429`.
+`204`, y >5 logins/min → `429`. Recuperación: forgot `202` (siempre), reset con
+token válido `204`, token usado/caducado/inválido `400`.
 
 ---
 

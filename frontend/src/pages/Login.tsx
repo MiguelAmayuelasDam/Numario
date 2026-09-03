@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,9 @@ import type { FieldErrors } from "@/lib/validation"
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // Aviso que llega, por ejemplo, tras cambiar la contraseña (redirige aquí).
+  const notice = (location.state as { notice?: string } | null)?.notice ?? null
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -67,6 +70,14 @@ export default function Login() {
           <CardDescription>Accede a tu cuenta de Numario</CardDescription>
         </CardHeader>
         <CardContent>
+          {notice ? (
+            <p
+              className="mb-4 rounded-md bg-income/10 px-3 py-2 text-sm text-income"
+              role="status"
+            >
+              {notice}
+            </p>
+          ) : null}
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <div className="space-y-2">
               <Label htmlFor="identifier">Email o nick</Label>
@@ -86,6 +97,22 @@ export default function Login() {
               ) : null}
             </div>
             <div className="space-y-2">
+              {/*
+                Recuperación de contraseña: el flujo está COMPLETO pero DORMIDO. El
+                enlace «¿Olvidaste tu contraseña?» se oculta a propósito porque el
+                envío de correo está apagado (EMAIL_PROVIDER=console); mostrarlo
+                sería un callejón sin salida para el usuario. Las rutas
+                /forgot-password y /reset-password siguen existiendo. Para
+                reactivarlo: configura Resend (ver .env.example) y envuelve este
+                Label con un enlace a /forgot-password:
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Contraseña</Label>
+                    <Link to="/forgot-password"
+                      className="text-xs font-medium text-primary hover:underline">
+                      ¿Olvidaste tu contraseña?
+                    </Link>
+                  </div>
+              */}
               <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
