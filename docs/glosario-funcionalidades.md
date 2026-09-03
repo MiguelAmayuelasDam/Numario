@@ -536,6 +536,39 @@ se decide el PR). Backend con TDD en el reparto; pantalla Cartera con E2E.
 
 ---
 
+## Recuperación de contraseña por correo (post-entrega)
+
+**Objetivo.** Poder recuperar la cuenta si se olvida la contraseña. La pregunta
+"¿cómo verifico que es el usuario real?" se resuelve con el correo: **la posesión
+de la bandeja es la prueba de identidad**.
+
+**Qué se implementó**
+
+- **Flujo estándar y seguro**: login → «¿Olvidaste tu contraseña?» → email →
+  correo con un enlace `…/reset-password?token=XXX` → formulario de nueva
+  contraseña (reutiliza el **medidor de fuerza** y la **política** existentes).
+- **Token de un solo uso, caducable (1 h) y guardado hasheado** (mismo patrón que
+  los refresh tokens: aleatorio + sha256, tabla `password_reset_tokens`, migración
+  `0016`). Al usarlo: cambia el hash, **marca el token usado** y **revoca todos los
+  refresh tokens** (cierra sesión en todas partes).
+- **Sin enumeración de usuarios**: `POST /auth/forgot-password` responde **siempre
+  igual** exista o no el email, y está **rate-limited** como el login.
+- **Envío de correo pluggable** (mismo patrón que la IA): `EMAIL_PROVIDER` =
+  `console` (dev: escribe el enlace en el log, no envía) · `resend` (prod: envía de
+  verdad vía API HTTP) · `none` (apagado). Activar el envío real en producción solo
+  necesita variables de entorno (`RESEND_API_KEY`, `EMAIL_FROM`, `FRONTEND_URL`),
+  sin tocar código.
+
+**Por qué / decisiones**
+
+- **TDD** por ser autenticación (5 tests backend + 7 de las dos páginas frontend).
+- **Pluggable pero apagado por defecto** (`console`): el flujo es probable en local
+  sin proveedor de correo, y se enciende en prod cuando el autor pone la API key.
+
+**Estado:** ✅ Completada (rama `feat/password-reset`).
+
+---
+
 ## Vista transversal por áreas
 
 Resumen acumulado; se amplía en cada fase.

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,9 @@ import type { FieldErrors } from "@/lib/validation"
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // Aviso que llega, por ejemplo, tras cambiar la contraseña (redirige aquí).
+  const notice = (location.state as { notice?: string } | null)?.notice ?? null
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -67,6 +70,14 @@ export default function Login() {
           <CardDescription>Accede a tu cuenta de Numario</CardDescription>
         </CardHeader>
         <CardContent>
+          {notice ? (
+            <p
+              className="mb-4 rounded-md bg-income/10 px-3 py-2 text-sm text-income"
+              role="status"
+            >
+              {notice}
+            </p>
+          ) : null}
           <form onSubmit={onSubmit} className="space-y-4" noValidate>
             <div className="space-y-2">
               <Label htmlFor="identifier">Email o nick</Label>
@@ -86,7 +97,15 @@ export default function Login() {
               ) : null}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Contraseña</Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"

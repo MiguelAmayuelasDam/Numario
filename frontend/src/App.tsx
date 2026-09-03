@@ -7,12 +7,14 @@ import { ThemeProvider } from "@/context/ThemeContext"
 import Analytics from "@/pages/Analytics"
 import Dashboard from "@/pages/Dashboard"
 import EmergencyFund from "@/pages/EmergencyFund"
+import ForgotPassword from "@/pages/ForgotPassword"
 import Import from "@/pages/Import"
 import Login from "@/pages/Login"
 import Portfolio from "@/pages/Portfolio"
 import PortfolioState from "@/pages/PortfolioState"
 import Profile from "@/pages/Profile"
 import Register from "@/pages/Register"
+import ResetPassword from "@/pages/ResetPassword"
 import Transactions from "@/pages/Transactions"
 
 export default function App() {
@@ -23,6 +25,8 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             {/* Páginas autenticadas: barra superior constante (AppLayout). */}
             <Route
               element={

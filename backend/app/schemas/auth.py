@@ -46,6 +46,26 @@ class LogoutRequest(BaseModel):
     refresh_token: str = Field(min_length=1)
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=1)
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def _check_password_policy(cls, value: str) -> str:
+        # Sin el email/nick del usuario aquí (el token lo identifica en el backend),
+        # así que se aplican complejidad y bloqueo de comunes; el resto lo cubre el
+        # propio flujo. Igual de estricto que en el registro para lo importante.
+        errors = validate_password(value)
+        if errors:
+            raise ValueError("; ".join(errors))
+        return value
+
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

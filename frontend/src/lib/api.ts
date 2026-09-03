@@ -344,6 +344,12 @@ export const api = {
   logout: (refresh_token: string): Promise<void> =>
     request<void>("/auth/logout", { method: "POST", body: { refresh_token }, auth: true }),
 
+  forgotPassword: (email: string): Promise<{ detail: string }> =>
+    request<{ detail: string }>("/auth/forgot-password", { method: "POST", body: { email } }),
+
+  resetPassword: (token: string, new_password: string): Promise<void> =>
+    request<void>("/auth/reset-password", { method: "POST", body: { token, new_password } }),
+
   categories: {
     list: (): Promise<Category[]> => request<Category[]>("/categories", { auth: true }),
     create: (name: string, bucket: Bucket): Promise<Category> =>

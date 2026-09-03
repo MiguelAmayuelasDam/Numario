@@ -6,48 +6,7 @@ Al cerrar una, se traslada su resumen a
 
 ---
 
-## 1. Recuperación de contraseña por correo
-
-**Estado:** pendiente · **Alcance:** medio · **Bloqueo:** elegir proveedor de email
-y crear su API key (lo hace el autor).
-
-**Problema.** No hay forma de recuperar la cuenta si se olvida la contraseña, y no
-existe ninguna verificación por correo. La pregunta "¿cómo verifico que es el
-usuario real?" se resuelve precisamente con el correo: **la posesión de la bandeja
-es la prueba de identidad**. Es el estándar y, bien hecho, es seguro.
-
-**Solución diseñada (flujo).**
-1. En login → enlace "¿Olvidaste tu contraseña?" → el usuario introduce su email.
-2. Backend genera un **token de un solo uso, caducable (~1 h) y guardado hasheado**
-   (mismo patrón que los refresh tokens) y envía un correo con un enlace
-   `…/reset-password?token=XXX`. **Responde siempre lo mismo** ("si el email existe,
-   te hemos enviado un correo") para **no revelar** qué correos están registrados
-   (evita enumeración de usuarios). Endpoint **rate-limited**, como el login.
-3. El usuario abre el enlace → formulario de nueva contraseña, reutilizando el
-   **medidor de fuerza** y la **política** de contraseña que ya existen.
-4. Backend valida el token (existe, no caducado, no usado) → cambia el hash →
-   **invalida el token** y **revoca los refresh tokens** (cierra sesión en todas
-   partes) por seguridad.
-
-**Lo nuevo que hace falta.**
-- **Proveedor de email** (hoy la app no envía correos). Recomendado: **Resend**
-  (plan gratis, API HTTP sencilla); alternativas: SendGrid / Mailgun / Amazon SES.
-  Necesita una **API key** (secreto en variables de entorno de Render, como
-  `JWT_SECRET`; **la configura el autor**, nunca en el repo) y un **remitente
-  verificado**.
-- Tabla nueva **`password_reset_token`** (`user_id`, `token_hash`, `expires_at`,
-  `used`) + su migración Alembic.
-- Endpoints **`POST /auth/forgot-password`** y **`POST /auth/reset-password`**.
-- Frontend: enlace "¿Olvidaste tu contraseña?", pantalla de email y página
-  `/reset-password`.
-- **Tests (TDD)**, como toda la parte de autenticación.
-
-**Decisiones pendientes:** proveedor de email (¿Resend?) · dirección remitente ·
-caducidad del token (propuesta: 1 h).
-
----
-
-## 2. Despliegue gratuito (Render → plan Free)
+## 1. Despliegue gratuito (Render → plan Free)
 
 **Estado:** pendiente · **Alcance:** bajo (acción del autor en el panel de Render,
 sin cambios de código).
@@ -76,7 +35,7 @@ Free**. Redespliega en la instancia gratuita y deja de cobrar.
 
 ---
 
-## 3. Adaptar la web a móvil (responsive vertical)
+## 2. Adaptar la web a móvil (responsive vertical)
 
 **Estado:** pendiente · **Alcance:** medio · **Sin bloqueos** (se puede empezar
 cuando se quiera).
