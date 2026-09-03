@@ -97,15 +97,23 @@ export default function Login() {
               ) : null}
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Contraseña</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </div>
+              {/*
+                Recuperación de contraseña: el flujo está COMPLETO pero DORMIDO. El
+                enlace «¿Olvidaste tu contraseña?» se oculta a propósito porque el
+                envío de correo está apagado (EMAIL_PROVIDER=console); mostrarlo
+                sería un callejón sin salida para el usuario. Las rutas
+                /forgot-password y /reset-password siguen existiendo. Para
+                reactivarlo: configura Resend (ver .env.example) y envuelve este
+                Label con un enlace a /forgot-password:
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Contraseña</Label>
+                    <Link to="/forgot-password"
+                      className="text-xs font-medium text-primary hover:underline">
+                      ¿Olvidaste tu contraseña?
+                    </Link>
+                  </div>
+              */}
+              <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
                 type="password"
