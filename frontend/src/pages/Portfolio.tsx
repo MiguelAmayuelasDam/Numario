@@ -341,12 +341,12 @@ export default function Portfolio() {
 
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-8">
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="flex items-center gap-2 text-3xl font-bold">
           Cartera
           <PortfolioHint />
         </h1>
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           {assets.length > 0 ? (
             <Button variant="outline" onClick={() => setContribDialog(true)}>
               Aportación extra

@@ -46,37 +46,6 @@ que arrancarlo a mano en el panel.
 - Mantenerla despierta 24/7 consume **~730 h/mes** y Render Free da **750 h/mes** →
   cabe, pero justo (ojo si se añade otro servicio Free en la misma cuenta).
 
----
-
-## 2. Adaptar la web a móvil (responsive vertical)
-
-**Estado:** pendiente · **Alcance:** medio · **Sin bloqueos** (se puede empezar
-cuando se quiera).
-
-**Problema (probado a 390 px, móvil vertical).** La app es "desktop-first". El
-**problema raíz es el overflow horizontal**: varias filas de controles/tablas no se
-reajustan al ancho del móvil, así que la página es **más ancha que la pantalla**
-(contenido pegado a la izquierda, scroll lateral, controles apretados). Eso es lo
-que "se ve raro".
-
-**Solución diseñada (por prioridad).**
-1. **Barra de navegación superior** — los enlaces + toggle de tema + saludo "Hola,
-   …" + avatar van apretados en una sola fila. En móvil → **menú hamburguesa** (o
-   barra inferior de pestañas) y acortar/ocultar el saludo.
-2. **Overflow horizontal global** — garantizar que el `body` nunca haga scroll
-   lateral; que las filas anchas **envuelvan** o hagan scroll **dentro de su propio
-   contenedor**.
-3. **Cabeceras con botones de acción:**
-   - **Cartera:** el título se solapa con `[Aportación extra] [Añadir grupo] [Añadir
-     activo]` → **apilar** en móvil.
-   - **Movimientos:** filtros + búsqueda + `[Nuevo movimiento]` se salen → apilar /
-     colapsar los filtros.
-4. **Análisis:** quitar el **`zoom: 1.1`** en móvil (agranda todo un 10% y empeora el
-   ajuste) y **reflow de la tabla "Categorías: gastado vs previsto"** (4 columnas,
-   demasiado ancha → tarjeta por categoría o apilar columnas).
-5. **Áreas táctiles** — algún "Editar" / checkbox pequeño se puede agrandar para el
-   dedo.
-
-**Enfoque:** un pase de responsive con Tailwind (breakpoints `sm:`), empezando por
-la **nav** y el **overflow horizontal** (lo más visible), y luego las cabeceras y la
-tabla de Análisis.
+> **La tarea de responsive móvil ya está implementada** (rama
+> `feat/responsive-movil`) → su resumen vive en
+> [`glosario-funcionalidades.md`](glosario-funcionalidades.md).

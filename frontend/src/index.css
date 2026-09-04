@@ -167,6 +167,13 @@
     border-color: var(--color-border);
     outline-color: color-mix(in oklch, var(--color-ring) 50%, transparent);
   }
+  /* Red de seguridad en móvil: ningún contenido puntualmente ancho debe provocar
+     scroll horizontal de toda la página. Va en `html` (el viewport real): en
+     `body` no frena el desplazamiento por la propagación de overflow. `clip` (no
+     `hidden`) no crea contenedor de scroll, así que no rompe la cabecera `sticky`. */
+  html {
+    overflow-x: clip;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

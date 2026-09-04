@@ -324,7 +324,7 @@ export default function Analytics() {
   const suggestedIncome = noIncome ? (overview?.summary.income ?? "0") : (overview?.income_base ?? "0")
 
   return (
-    <main className="mx-auto max-w-4xl p-4 sm:p-8" style={{ zoom: 1.1 }}>
+    <main className="mx-auto max-w-4xl p-4 sm:p-8">
       <h1 className="mb-4 text-3xl font-bold">Análisis</h1>
 
       {/* Selector de periodo */}
@@ -543,7 +543,8 @@ export default function Analytics() {
               <p className="text-sm text-muted-foreground">Sin gastos en este periodo.</p>
             ) : overview.is_current ? (
               <div className="max-h-[34rem] overflow-y-auto pr-2">
-                <div className="flex items-center gap-3 border-b pb-1 text-xs text-muted-foreground">
+                {/* Cabecera de columnas: solo en sm+ (en móvil cada fila es una tarjeta) */}
+                <div className="hidden items-center gap-3 border-b pb-1 text-xs text-muted-foreground sm:flex">
                   <span className="w-6" />
                   <span className="flex-1">Categoría</span>
                   <span className="w-28 shrink-0 text-right">Gastado</span>
@@ -556,48 +557,57 @@ export default function Analytics() {
                     const previstoStr = id ? (forecasts[id] ?? c.forecast ?? "") : ""
                     const overage = Number(c.spent) - (Number(previstoStr) || 0)
                     return (
-                      <li key={id ?? "none"} className="flex items-center gap-3 py-3">
+                      <li
+                        key={id ?? "none"}
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 sm:flex-nowrap"
+                      >
                         <span className="w-6 text-lg">{c.emoji ?? "🏷️"}</span>
                         <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                        <span className="w-28 shrink-0 whitespace-nowrap text-right font-semibold">
-                          {formatMoney(c.spent)}
-                        </span>
-                        <span className="w-24 shrink-0">
-                          {id ? (
-                            <span className="flex items-center rounded-md border px-2 py-1">
-                              <input
-                                type="number"
-                                min="0"
-                                max={MAX_AMOUNT}
-                                step="0.01"
-                                aria-label={`Previsto de ${c.name}`}
-                                className="w-full bg-transparent text-right text-sm outline-none"
-                                placeholder="0"
-                                value={previstoStr}
-                                onChange={(e) =>
-                                  withinCap(e.target.value) && setForecastValue(id, e.target.value)
-                                }
-                                onBlur={() => saveForecast(id)}
-                              />
-                              <span className="ml-0.5 text-muted-foreground">€</span>
+                        {/* Importes: en móvil bajan a su propia fila; en sm+ vuelven a columnas */}
+                        <div className="flex w-full items-center justify-between gap-2 sm:contents sm:w-auto">
+                          <span className="whitespace-nowrap text-right font-semibold sm:w-28 sm:shrink-0">
+                            <span className="mr-1 text-xs font-normal text-muted-foreground sm:hidden">
+                              Gastado
                             </span>
-                          ) : null}
-                        </span>
-                        <span className="w-28 shrink-0 whitespace-nowrap text-right text-xs leading-tight">
-                          {overage > 0 ? (
-                            <span style={{ color: "var(--expense)" }}>
-                              {formatMoney(overage)}
-                              <br />
-                              Incrementado
-                            </span>
-                          ) : overage < 0 ? (
-                            <span className="text-income">
-                              {formatMoney(-overage)}
-                              <br />
-                              Ahorrado
-                            </span>
-                          ) : null}
-                        </span>
+                            {formatMoney(c.spent)}
+                          </span>
+                          <span className="w-24 shrink-0">
+                            {id ? (
+                              <span className="flex items-center rounded-md border px-2 py-1">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={MAX_AMOUNT}
+                                  step="0.01"
+                                  aria-label={`Previsto de ${c.name}`}
+                                  className="w-full bg-transparent text-right text-sm outline-none"
+                                  placeholder="0"
+                                  value={previstoStr}
+                                  onChange={(e) =>
+                                    withinCap(e.target.value) && setForecastValue(id, e.target.value)
+                                  }
+                                  onBlur={() => saveForecast(id)}
+                                />
+                                <span className="ml-0.5 text-muted-foreground">€</span>
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="whitespace-nowrap text-right text-xs leading-tight sm:w-28 sm:shrink-0">
+                            {overage > 0 ? (
+                              <span style={{ color: "var(--expense)" }}>
+                                {formatMoney(overage)}
+                                <br />
+                                Incrementado
+                              </span>
+                            ) : overage < 0 ? (
+                              <span className="text-income">
+                                {formatMoney(-overage)}
+                                <br />
+                                Ahorrado
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
                       </li>
                     )
                   })}
