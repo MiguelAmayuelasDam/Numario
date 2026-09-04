@@ -178,7 +178,7 @@ export default function Transactions() {
 
       {/* Filtros: fechas, categoría y buscador */}
       <div className="mb-4 flex flex-wrap items-start gap-3">
-        <div>
+        <div className="w-full sm:w-auto">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Fechas</span>
             <DatePicker
@@ -187,7 +187,7 @@ export default function Transactions() {
               value={dateFrom}
               onChange={setDateFrom}
               max={dateTo || today}
-              className="w-40"
+              className="min-w-0 flex-1 sm:w-40 sm:flex-none"
             />
             <span className="text-muted-foreground">a</span>
             <DatePicker
@@ -197,7 +197,7 @@ export default function Transactions() {
               onChange={setDateTo}
               min={dateFrom || undefined}
               max={today}
-              className="w-40"
+              className="min-w-0 flex-1 sm:w-40 sm:flex-none"
             />
           </div>
           {hasDateFilter ? (
@@ -240,15 +240,15 @@ export default function Transactions() {
       </div>
 
       {/* Pestañas por tipo + botón de alta */}
-      <div className="mb-2 flex items-center justify-between border-b">
-        <div className="flex gap-1">
+      <div className="mb-2 flex flex-col gap-2 border-b sm:flex-row sm:items-center sm:justify-between">
+        <div className="-mb-px flex gap-1 overflow-x-auto">
           {TABS.map((t) => (
             <button
               key={t.key}
               type="button"
               onClick={() => setTab(t.key)}
               className={
-                "border-b-2 px-3 py-2 text-sm font-medium transition-colors " +
+                "shrink-0 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors " +
                 (tab === t.key
                   ? "border-primary text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground")
@@ -258,11 +258,11 @@ export default function Transactions() {
             </button>
           ))}
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" asChild>
+        <div className="flex gap-2 pb-2 sm:pb-0">
+          <Button size="sm" variant="outline" asChild className="flex-1 sm:flex-none">
             <Link to="/importar">Importar CSV</Link>
           </Button>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="flex-1 sm:flex-none">
             Añadir movimiento
           </Button>
         </div>

@@ -569,6 +569,41 @@ de la bandeja es la prueba de identidad**.
 
 ---
 
+## Adaptación a móvil (responsive vertical, post-entrega)
+
+**Objetivo.** La app era "desktop-first" y a 375 px se salía de la pantalla
+(scroll lateral, controles apretados). Que se vea y se use bien en móvil vertical.
+
+**Qué se implementó** (enfoque mobile-first con breakpoints `sm:` de Tailwind, sin
+librerías nuevas)
+
+- **Navegación** ([`TopNav`](../frontend/src/components/TopNav.tsx)): en móvil los
+  enlaces se pliegan en un **menú hamburguesa** y el saludo "Hola, {nick}" se oculta;
+  en `sm:` en adelante, la barra horizontal de siempre.
+- **Análisis**: se elimina el `zoom: 1.1` (inflaba todo un 10% y empeoraba el ajuste)
+  y la tabla **"Categorías: gastado vs previsto"** (5 columnas) **refluye a tarjeta
+  por categoría** en móvil (importes con etiqueta debajo del nombre) y vuelve a
+  columnas en `sm:` (truco `sm:contents`, sin duplicar marcado).
+- **Movimientos**: la fila de pestañas + botones se **apila** en móvil (pestañas con
+  scroll horizontal propio; botones a ancho completo) y los selectores de fecha pasan
+  a fluidos.
+- **Cartera**: la cabecera (título + 3 botones) se **apila** en móvil.
+- **Red de seguridad global**: `html { overflow-x: clip }` para que ningún contenido
+  puntualmente ancho provoque scroll lateral de toda la página (no afecta a los
+  contenedores con scroll propio, como las tablas, ni a la cabecera `sticky`).
+
+**Cómo se probó**
+
+- En navegador real a **375 px**, página por página, verificando
+  **`document.body.scrollWidth === window.innerWidth`** (cero scroll horizontal) en
+  Inicio, Movimientos, Análisis, Cartera, Estado real, Importar, Colchón y Perfil.
+- Se comprobó que **el escritorio no se rompe** (nav inline y tabla en columnas
+  vuelven en `sm:`), con `tsc`, `eslint` y los 87 tests de front en verde.
+
+**Estado:** ✅ Completada (rama `feat/responsive-movil`).
+
+---
+
 ## Vista transversal por áreas
 
 Resumen acumulado; se amplía en cada fase.
